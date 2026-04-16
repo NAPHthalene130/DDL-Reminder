@@ -80,6 +80,10 @@ const STATUS_META: Record<
     label: "临近",
     toneClass: "border-amber-400/30 bg-amber-400/10 text-amber-200"
   },
+  urgent: {
+    label: "紧急",
+    toneClass: "border-rose-400/30 bg-rose-400/10 text-rose-200"
+  },
   overdue: {
     label: "已逾期",
     toneClass: "border-rose-400/30 bg-rose-400/10 text-rose-200"
@@ -197,7 +201,9 @@ export function MainTaskWorkspace() {
       total: visibleTasks.length,
       active: visibleTasks.filter((task) => task.status === "ACTIVE").length,
       approaching: visibleTasks.filter(
-        (task) => task.deadlineStatus === "approaching"
+        (task) =>
+          task.deadlineStatus === "approaching" ||
+          task.deadlineStatus === "urgent"
       ).length,
       completed: visibleTasks.filter((task) => task.status === "COMPLETED")
         .length
@@ -369,10 +375,10 @@ export function MainTaskWorkspace() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)]">
+    <div className="flex h-full min-h-0 overflow-hidden">
       <TreeSidebar activeAction={activeAction} onSwitch={switchAction} />
 
-      <section className="min-w-0 flex-1 px-5 py-6 sm:px-6 lg:px-8">
+      <section className="min-w-0 flex-1 overflow-y-auto px-5 py-6 sm:px-6 lg:px-8">
         {activeAction === "view" ? (
           <ViewTasksPanel
             busyTaskId={busyTaskId}
@@ -417,8 +423,10 @@ function TreeSidebar({
   activeAction: WorkspaceAction;
   onSwitch: (action: WorkspaceAction) => void;
 }) {
+  const [isEditGroupExpanded, setIsEditGroupExpanded] = useState(true);
+
   return (
-    <aside className="h-[calc(100vh-4rem)] w-72 shrink-0 overflow-y-auto border-r border-[var(--border)] bg-[#171918] px-4 py-5">
+    <aside className="h-full w-72 shrink-0 overflow-y-auto border-r border-[var(--border)] bg-[#171918] px-4 py-5">
       <nav className="flex flex-col gap-2">
         <TreeButton
           active={activeAction === "view"}
@@ -428,23 +436,34 @@ function TreeSidebar({
         />
 
         <div className="mt-2">
-          <div className="flex items-center gap-3 rounded-md px-3 py-3 text-sm font-semibold text-[var(--primary)]">
+          <button
+            aria-expanded={isEditGroupExpanded}
+            className={`flex w-full items-center gap-3 rounded-md border px-3 py-3 text-left text-sm font-semibold transition ${
+              activeAction === "view"
+                ? "border-transparent text-[var(--primary)] hover:bg-[var(--muted)]"
+                : "border-[var(--primary)] bg-[#263245] text-[var(--primary)]"
+            }`}
+            onClick={() => setIsEditGroupExpanded((isExpanded) => !isExpanded)}
+            type="button"
+          >
             <ActionIcon action="group" />
             <span className="flex-1">任务编辑</span>
-            <ChevronUpIcon />
-          </div>
+            <ChevronIcon expanded={isEditGroupExpanded} />
+          </button>
 
-          <div className="mt-1 flex flex-col gap-1 pl-6">
-            {EDIT_ACTIONS.map((action) => (
-              <TreeButton
-                active={activeAction === action.id}
-                icon={<ActionIcon action={action.id} />}
-                key={action.id}
-                label={action.label}
-                onClick={() => onSwitch(action.id)}
-              />
-            ))}
-          </div>
+          {isEditGroupExpanded ? (
+            <div className="mt-1 flex flex-col gap-1 pl-6">
+              {EDIT_ACTIONS.map((action) => (
+                <TreeButton
+                  active={activeAction === action.id}
+                  icon={<ActionIcon action={action.id} />}
+                  key={action.id}
+                  label={action.label}
+                  onClick={() => onSwitch(action.id)}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
       </nav>
     </aside>
@@ -1080,11 +1099,11 @@ function ActionIcon({ action }: { action: WorkspaceAction | "group" }) {
   );
 }
 
-function ChevronUpIcon() {
+function ChevronIcon({ expanded }: { expanded: boolean }) {
   return (
     <svg
       aria-hidden="true"
-      className="h-4 w-4"
+      className={`h-4 w-4 transition-transform ${expanded ? "" : "rotate-180"}`}
       fill="none"
       stroke="currentColor"
       strokeLinecap="round"

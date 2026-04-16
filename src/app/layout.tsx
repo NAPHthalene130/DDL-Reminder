@@ -17,7 +17,7 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body>
         <TopNav />
-        {children}
+        <div className="pt-16">{children}</div>
       </body>
     </html>
   );

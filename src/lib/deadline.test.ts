@@ -91,6 +91,26 @@ describe("getDeadlineStatus", () => {
     expect(status).toBe("overdue");
   });
 
+  it("returns urgent for active tasks due in less than 2 hours", () => {
+    const status = getDeadlineStatus({
+      taskStatus: "ACTIVE",
+      dueAt: new Date("2026-04-16T03:59:00.000Z"),
+      now: new Date("2026-04-16T02:00:00.000Z")
+    });
+
+    expect(status).toBe("urgent");
+  });
+
+  it("returns approaching when the deadline is exactly at the urgent threshold", () => {
+    const status = getDeadlineStatus({
+      taskStatus: "ACTIVE",
+      dueAt: new Date("2026-04-16T04:00:00.000Z"),
+      now: new Date("2026-04-16T02:00:00.000Z")
+    });
+
+    expect(status).toBe("approaching");
+  });
+
   it("returns approaching for active tasks due within 48 hours", () => {
     const status = getDeadlineStatus({
       taskStatus: "ACTIVE",

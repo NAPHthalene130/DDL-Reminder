@@ -8,7 +8,7 @@ export default async function ManagePage() {
 
   if (!isAuthenticated) {
     return (
-      <main className="min-h-screen px-5 py-8 sm:px-6 lg:px-8">
+      <main className="min-h-[calc(100vh-4rem)] px-5 py-8 sm:px-6 lg:px-8">
         <section className="mx-auto max-w-md rounded-lg border border-[var(--border)] bg-[var(--panel)] p-6">
           <h1 className="text-3xl font-bold">任务配置</h1>
           <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">
@@ -21,7 +21,7 @@ export default async function ManagePage() {
   }
 
   return (
-    <main className="min-h-screen px-5 py-6 sm:px-6 lg:px-8">
+    <main className="min-h-[calc(100vh-4rem)] px-5 py-6 sm:px-6 lg:px-8">
       <section className="mx-auto flex max-w-6xl flex-col gap-6">
         <Link
           aria-label="退出设置"

@@ -6,7 +6,7 @@ export async function TopNav() {
   const isAuthenticated = await hasManageSession();
 
   return (
-    <nav className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--background)]/95 backdrop-blur">
+    <nav className="fixed inset-x-0 top-0 z-30 border-b border-[var(--border)] bg-[var(--background)]/95 backdrop-blur">
       <div className="flex h-16 items-center justify-between px-5 sm:px-6 lg:px-8">
         <Link
           className="text-lg font-bold tracking-normal text-[var(--foreground)]"

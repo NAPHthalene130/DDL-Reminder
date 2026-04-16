@@ -78,6 +78,10 @@ const STATUS_META: Record<
     label: "临近",
     toneClass: "border-amber-400/30 bg-amber-400/10 text-amber-200"
   },
+  urgent: {
+    label: "紧急",
+    toneClass: "border-rose-400/30 bg-rose-400/10 text-rose-200"
+  },
   overdue: {
     label: "已逾期",
     toneClass: "border-rose-400/30 bg-rose-400/10 text-rose-200"
@@ -150,7 +154,9 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
       total: visibleTasks.length,
       active: visibleTasks.filter((task) => task.status === "ACTIVE").length,
       approaching: visibleTasks.filter(
-        (task) => task.deadlineStatus === "approaching"
+        (task) =>
+          task.deadlineStatus === "approaching" ||
+          task.deadlineStatus === "urgent"
       ).length,
       completed: visibleTasks.filter((task) => task.status === "COMPLETED")
         .length
