@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { appConfig } from "@/lib/env";
 
 const setupItems = [
@@ -5,7 +6,8 @@ const setupItems = [
   "TypeScript",
   "Tailwind CSS",
   "Prisma",
-  "PostgreSQL-ready environment"
+  "Public dashboard",
+  "Protected management area"
 ];
 
 export default function Home() {
@@ -24,11 +26,19 @@ export default function Home() {
               一个以 PC 端 Web 为主、同时适配手机端的 DDL 管理工具骨架已经就绪。
             </p>
           </div>
-          <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)] px-4 py-3 text-sm text-[var(--muted-foreground)]">
-            默认时区：
-            <span className="font-semibold text-[var(--foreground)]">
-              {appConfig.timezone}
-            </span>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link
+              className="inline-flex h-10 items-center justify-center rounded-md border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--foreground)]"
+              href="/manage"
+            >
+              管理任务
+            </Link>
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)] px-4 py-3 text-sm text-[var(--muted-foreground)]">
+              默认时区：
+              <span className="font-semibold text-[var(--foreground)]">
+                {appConfig.timezone}
+              </span>
+            </div>
           </div>
         </header>
 
@@ -38,8 +48,8 @@ export default function Home() {
               <div>
                 <h2 className="text-2xl font-semibold">任务看板占位</h2>
                 <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-                  下一阶段会接入 PostgreSQL 数据模型，然后逐步加入登录、任务 API
-                  和真实看板。
+                  接下来会接入任务 API
+                  和真实看板。首页保持公开只读，增删改查操作放在受保护管理区。
                 </p>
               </div>
               <span className="inline-flex w-fit rounded-md bg-[var(--muted)] px-3 py-2 text-sm font-medium text-[var(--foreground)]">
@@ -50,7 +60,7 @@ export default function Home() {
             <div className="mt-8 rounded-lg border border-dashed border-[var(--border)] bg-[var(--background)] p-8 text-center">
               <p className="text-lg font-semibold">还没有任务</p>
               <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-                Phase 2 和 Phase 4 完成后，这里会显示任务、剩余时间、状态和 DDL
+                Phase 4 和 Phase 5 完成后，这里会显示任务、剩余时间、状态和 DDL
                 进度条。
               </p>
             </div>
