@@ -35,7 +35,7 @@ export function ManageLoginForm() {
         管理密码
         <input
           autoComplete="current-password"
-          className="h-11 rounded-md border border-[var(--border)] bg-white px-3 text-base outline-none focus:border-[var(--primary)]"
+          className="h-11 rounded-md border border-[var(--border)] bg-[var(--field)] px-3 text-base text-[var(--foreground)] outline-none focus:border-[var(--primary)]"
           onChange={(event) => setPassword(event.target.value)}
           placeholder="输入管理密码"
           type="password"

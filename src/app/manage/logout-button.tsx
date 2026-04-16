@@ -17,7 +17,7 @@ export function ManageLogoutButton() {
 
   return (
     <button
-      className="h-10 rounded-md border border-[var(--border)] bg-white px-4 text-sm font-semibold text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-60"
+      className="h-10 rounded-md border border-[var(--border)] bg-[var(--panel)] px-4 text-sm font-semibold text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-60"
       disabled={isSubmitting}
       onClick={handleLogout}
       type="button"

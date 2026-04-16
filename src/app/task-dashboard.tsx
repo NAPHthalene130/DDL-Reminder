@@ -69,33 +69,33 @@ const STATUS_META: Record<
 > = {
   normal: {
     label: "正常",
-    toneClass: "border-emerald-200 bg-emerald-50 text-emerald-800",
-    barClass: "bg-emerald-600"
+    toneClass: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
+    barClass: "bg-emerald-400"
   },
   approaching: {
     label: "临近",
-    toneClass: "border-amber-200 bg-amber-50 text-amber-800",
-    barClass: "bg-amber-500"
+    toneClass: "border-amber-400/30 bg-amber-400/10 text-amber-200",
+    barClass: "bg-amber-300"
   },
   due_today: {
     label: "今天截止",
-    toneClass: "border-yellow-200 bg-yellow-50 text-yellow-800",
-    barClass: "bg-yellow-500"
+    toneClass: "border-yellow-300/30 bg-yellow-300/10 text-yellow-100",
+    barClass: "bg-yellow-300"
   },
   overdue: {
     label: "已逾期",
-    toneClass: "border-red-200 bg-red-50 text-red-700",
-    barClass: "bg-red-600"
+    toneClass: "border-rose-400/30 bg-rose-400/10 text-rose-200",
+    barClass: "bg-rose-400"
   },
   completed: {
     label: "已完成",
-    toneClass: "border-zinc-200 bg-zinc-100 text-zinc-700",
-    barClass: "bg-zinc-500"
+    toneClass: "border-stone-400/30 bg-stone-400/10 text-stone-200",
+    barClass: "bg-stone-400"
   },
   archived: {
     label: "已归档",
-    toneClass: "border-zinc-200 bg-zinc-100 text-zinc-500",
-    barClass: "bg-zinc-400"
+    toneClass: "border-stone-500/30 bg-stone-500/10 text-stone-400",
+    barClass: "bg-stone-500"
   }
 };
 
@@ -154,12 +154,13 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
 
   const stats = useMemo(() => {
     return {
+      total: visibleTasks.length,
       active: visibleTasks.filter((task) => task.status === "ACTIVE").length,
-      dueToday: visibleTasks.filter(
-        (task) => task.deadlineStatus === "due_today"
+      approaching: visibleTasks.filter(
+        (task) =>
+          task.deadlineStatus === "approaching" ||
+          task.deadlineStatus === "due_today"
       ).length,
-      overdue: visibleTasks.filter((task) => task.deadlineStatus === "overdue")
-        .length,
       completed: visibleTasks.filter((task) => task.status === "COMPLETED")
         .length
     };
@@ -255,10 +256,34 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
   return (
     <div className="flex flex-col gap-8">
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatBlock label="进行中" value={stats.active} />
-        <StatBlock label="今天截止" value={stats.dueToday} />
-        <StatBlock label="已逾期" value={stats.overdue} isWarning />
-        <StatBlock label="已完成" value={stats.completed} />
+        <StatBlock
+          cardClass="border-[#5f34b0] bg-[#5f34b0]"
+          label="全部任务"
+          labelClass="text-white"
+          value={stats.total}
+          valueClass="text-white"
+        />
+        <StatBlock
+          cardClass="border-[#57bfda] bg-[#57bfda]"
+          label="进行中"
+          labelClass="text-white"
+          value={stats.active}
+          valueClass="text-white"
+        />
+        <StatBlock
+          cardClass="border-[#ff0000] bg-[#ff0000]"
+          label="临近截止"
+          labelClass="text-white"
+          value={stats.approaching}
+          valueClass="text-white"
+        />
+        <StatBlock
+          cardClass="border-[#4bae50] bg-[#4bae50]"
+          label="已完成"
+          labelClass="text-white"
+          value={stats.completed}
+          valueClass="text-white"
+        />
       </section>
 
       {isManageMode ? (
@@ -279,7 +304,7 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
             <label className="flex flex-col gap-2 text-sm font-medium">
               标题
               <input
-                className="h-11 rounded-md border border-[var(--border)] bg-white px-3 text-base outline-none focus:border-[var(--primary)]"
+                className="h-11 rounded-md border border-[var(--border)] bg-[var(--field)] px-3 text-base text-[var(--foreground)] outline-none focus:border-[var(--primary)]"
                 onChange={(event) =>
                   setForm((currentForm) => ({
                     ...currentForm,
@@ -295,7 +320,7 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
             <label className="flex flex-col gap-2 text-sm font-medium">
               描述
               <textarea
-                className="min-h-28 resize-y rounded-md border border-[var(--border)] bg-white px-3 py-2 text-base leading-6 outline-none focus:border-[var(--primary)]"
+                className="min-h-28 resize-y rounded-md border border-[var(--border)] bg-[var(--field)] px-3 py-2 text-base leading-6 text-[var(--foreground)] outline-none focus:border-[var(--primary)]"
                 onChange={(event) =>
                   setForm((currentForm) => ({
                     ...currentForm,
@@ -311,7 +336,7 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
               <label className="flex flex-col gap-2 text-sm font-medium">
                 开始时间
                 <input
-                  className="h-11 rounded-md border border-[var(--border)] bg-white px-3 text-sm outline-none focus:border-[var(--primary)]"
+                  className="h-11 rounded-md border border-[var(--border)] bg-[var(--field)] px-3 text-sm text-[var(--foreground)] outline-none focus:border-[var(--primary)]"
                   onChange={(event) =>
                     setForm((currentForm) => ({
                       ...currentForm,
@@ -327,7 +352,7 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
               <label className="flex flex-col gap-2 text-sm font-medium">
                 DDL 时间
                 <input
-                  className="h-11 rounded-md border border-[var(--border)] bg-white px-3 text-sm outline-none focus:border-[var(--primary)]"
+                  className="h-11 rounded-md border border-[var(--border)] bg-[var(--field)] px-3 text-sm text-[var(--foreground)] outline-none focus:border-[var(--primary)]"
                   onChange={(event) =>
                     setForm((currentForm) => ({
                       ...currentForm,
@@ -355,7 +380,7 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
               </button>
               {editingTaskId ? (
                 <button
-                  className="inline-flex h-11 items-center justify-center rounded-md border border-[var(--border)] bg-white px-4 text-sm font-semibold"
+                  className="inline-flex h-11 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--panel)] px-4 text-sm font-semibold"
                   onClick={resetForm}
                   type="button"
                 >
@@ -394,7 +419,7 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
       )}
 
       {error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <p className="rounded-md border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm font-medium text-rose-200">
           {error}
         </p>
       ) : null}
@@ -562,26 +587,22 @@ function TaskCard({
 }
 
 function StatBlock({
-  isWarning = false,
+  cardClass,
   label,
-  value
+  labelClass,
+  value,
+  valueClass
 }: {
-  isWarning?: boolean;
+  cardClass: string;
   label: string;
+  labelClass: string;
   value: number;
+  valueClass: string;
 }) {
   return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)] px-5 py-4">
-      <p className="text-sm font-medium text-[var(--muted-foreground)]">
-        {label}
-      </p>
-      <p
-        className={`mt-2 text-3xl font-bold ${
-          isWarning ? "text-[var(--danger)]" : "text-[var(--foreground)]"
-        }`}
-      >
-        {value}
-      </p>
+    <div className={`rounded-lg border px-5 py-4 ${cardClass}`}>
+      <p className={`text-sm font-medium ${labelClass}`}>{label}</p>
+      <p className={`mt-2 text-3xl font-bold ${valueClass}`}>{value}</p>
     </div>
   );
 }
@@ -612,8 +633,8 @@ function TaskActionButton({
     <button
       className={`inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${
         danger
-          ? "border-red-200 bg-red-50 text-red-700"
-          : "border-[var(--border)] bg-white text-[var(--foreground)]"
+          ? "border-rose-400/30 bg-rose-400/10 text-rose-200"
+          : "border-[var(--border)] bg-[var(--panel)] text-[var(--foreground)]"
       }`}
       disabled={disabled}
       onClick={onClick}

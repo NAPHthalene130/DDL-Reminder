@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { hasManageSession } from "@/lib/manage-auth";
 import { TaskDashboard } from "../task-dashboard";
 import { ManageLoginForm } from "./login-form";
@@ -9,14 +8,11 @@ export default async function ManagePage() {
 
   if (!isAuthenticated) {
     return (
-      <main className="min-h-screen px-6 py-8 sm:px-8 lg:px-12">
+      <main className="min-h-screen px-5 py-8 sm:px-6 lg:px-8">
         <section className="mx-auto max-w-md rounded-lg border border-[var(--border)] bg-[var(--panel)] p-6">
-          <Link className="text-sm font-medium text-[var(--primary)]" href="/">
-            返回公开看板
-          </Link>
-          <h1 className="mt-6 text-3xl font-bold">进入管理区</h1>
+          <h1 className="text-3xl font-bold">任务配置</h1>
           <p className="mt-3 text-sm leading-6 text-[var(--muted-foreground)]">
-            首页可以直接查看 DDL，看任务增删改查需要管理密码。
+            输入管理密码后，可以新增、编辑、完成、归档和删除任务。
           </p>
           <ManageLoginForm />
         </section>
@@ -25,25 +21,19 @@ export default async function ManagePage() {
   }
 
   return (
-    <main className="min-h-screen px-6 py-8 sm:px-8 lg:px-12">
-      <section className="mx-auto flex max-w-6xl flex-col gap-8">
-        <header className="flex flex-col gap-4 border-b border-[var(--border)] pb-6 lg:flex-row lg:items-end lg:justify-between">
+    <main className="min-h-screen px-5 py-6 sm:px-6 lg:px-8">
+      <section className="mx-auto flex max-w-6xl flex-col gap-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <Link
-              className="text-sm font-medium text-[var(--primary)]"
-              href="/"
-            >
-              返回公开看板
-            </Link>
-            <h1 className="mt-4 text-4xl font-bold tracking-normal text-[var(--foreground)] sm:text-5xl">
-              任务管理
+            <h1 className="text-2xl font-bold tracking-normal text-[var(--foreground)]">
+              任务配置
             </h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--muted-foreground)]">
-              新增、编辑、完成、归档和删除都在这里处理。公开首页继续保持只读。
+            <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+              管理你的 DDL 清单。
             </p>
           </div>
           <ManageLogoutButton />
-        </header>
+        </div>
 
         <TaskDashboard mode="manage" />
       </section>
