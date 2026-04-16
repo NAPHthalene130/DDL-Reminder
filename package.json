@@ -11,15 +11,17 @@
     "test:watch": "vitest",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
+    "db:ensure": "node scripts/ensure-sqlite-db.mjs",
+    "db:migrate": "npm run db:ensure && prisma migrate deploy",
     "prisma:generate": "prisma generate"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.7.0",
+    "@prisma/adapter-better-sqlite3": "^7.7.0",
     "@prisma/client": "^7.7.0",
+    "better-sqlite3": "^12.9.0",
     "dotenv": "^17.4.2",
     "next": "^16.2.3",
     "nodemailer": "^8.0.5",
-    "pg": "^8.20.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "zod": "^4.3.6"

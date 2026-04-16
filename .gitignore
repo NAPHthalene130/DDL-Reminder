@@ -10,3 +10,8 @@ coverage
 .DS_Store
 prisma/*.db
 prisma/*.db-journal
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+!data/.gitkeep

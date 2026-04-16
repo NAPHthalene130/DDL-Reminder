@@ -292,7 +292,9 @@ Backup:
 
 ## Environment Variables
 
-Required variables:
+Recommended variables:
+
+`DATABASE_URL` defaults to `file:./data/ddl-reminder.db` when omitted, but keeping it explicit is clearer for deployment.
 
 ```env
 DATABASE_URL=file:./data/ddl-reminder.db
@@ -315,16 +317,17 @@ TZ=Asia/Shanghai
 3. Replace the current PostgreSQL initial migration with a SQLite initial migration.
 4. Remove PostgreSQL-specific dependencies and Prisma adapter code.
 5. Add SQLite adapter dependencies and update the Prisma client factory.
-6. Keep the existing `Task` and `ReminderLog` domain model, adjusted for SQLite-compatible status fields.
-7. Keep and expand shared DDL calculation utilities and tests.
-8. Implement public read-only dashboard at `/`.
-9. Implement management password session.
-10. Implement protected management page at `/manage`.
-11. Implement public read API and protected write APIs.
-12. Implement the email reminder worker against SQLite.
-13. Add Dockerfile and Docker Compose configuration with a persistent `data` mount.
-14. Add README instructions for local development, deployment, and SQLite backup.
-15. Run local and Docker-based verification.
+6. Add a small SQLite file preparation script before running production migrations.
+7. Keep the existing `Task` and `ReminderLog` domain model, adjusted for SQLite-compatible status fields.
+8. Keep and expand shared DDL calculation utilities and tests.
+9. Implement public read-only dashboard at `/`.
+10. Implement management password session.
+11. Implement protected management page at `/manage`.
+12. Implement public read API and protected write APIs.
+13. Implement the email reminder worker against SQLite.
+14. Add Dockerfile and Docker Compose configuration with a persistent `data` mount.
+15. Add README instructions for local development, deployment, and SQLite backup.
+16. Run local and Docker-based verification.
 
 ## Test Plan
 
@@ -409,6 +412,7 @@ Tasks:
 - Replace PostgreSQL migration with SQLite migration.
 - Remove PostgreSQL adapter and `pg`.
 - Add SQLite adapter.
+- Add `db:ensure` / `db:migrate` scripts so the SQLite file exists before `prisma migrate deploy`.
 - Keep `Task` and `ReminderLog`.
 - Keep shared date/progress utility functions.
 - Keep logic tests for progress, remaining time, computed status, and reminder deduplication.
@@ -417,6 +421,7 @@ Exit criteria:
 
 - Prisma validates for SQLite.
 - Migration exists for SQLite.
+- SQLite migration can be applied through `npm run db:migrate`.
 - `npm test`, `npm run lint`, `npm run format`, and `npm run build` pass.
 
 ### Phase 3: Public Dashboard and Management Authentication

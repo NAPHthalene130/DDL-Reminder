@@ -5,7 +5,7 @@ const setupItems = [
   "Next.js App Router",
   "TypeScript",
   "Tailwind CSS",
-  "Prisma",
+  "SQLite + Prisma",
   "Public dashboard",
   "Protected management area"
 ];
@@ -17,13 +17,14 @@ export default function Home() {
         <header className="flex flex-col gap-4 border-b border-[var(--border)] pb-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-normal text-[var(--primary)]">
-              Phase 1 foundation
+              SQLite-ready foundation
             </p>
             <h1 className="mt-3 text-4xl font-bold tracking-normal text-[var(--foreground)] sm:text-5xl">
               {appConfig.name}
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--muted-foreground)]">
-              一个以 PC 端 Web 为主、同时适配手机端的 DDL 管理工具骨架已经就绪。
+              一个以 PC 端 Web 为主、同时适配手机端的个人 DDL
+              管理工具已经接入轻量 SQLite 数据层。
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -67,7 +68,7 @@ export default function Home() {
           </div>
 
           <aside className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-6">
-            <h2 className="text-xl font-semibold">阶段 1 已包含</h2>
+            <h2 className="text-xl font-semibold">当前基础能力</h2>
             <ul className="mt-5 space-y-3">
               {setupItems.map((item) => (
                 <li

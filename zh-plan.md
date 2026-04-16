@@ -292,7 +292,9 @@ prisma migrate deploy
 
 ## 环境变量
 
-必需变量：
+推荐变量：
+
+`DATABASE_URL` 未设置时默认使用 `file:./data/ddl-reminder.db`，但部署时显式配置更清晰。
 
 ```env
 DATABASE_URL=file:./data/ddl-reminder.db
@@ -315,16 +317,17 @@ TZ=Asia/Shanghai
 3. 用 SQLite 初始 migration 替换当前 PostgreSQL 初始 migration。
 4. 移除 PostgreSQL 专属依赖和 Prisma adapter 代码。
 5. 添加 SQLite adapter 依赖，并更新 Prisma client 工厂。
-6. 保留 `Task` 和 `ReminderLog` 领域模型，并调整为 SQLite 兼容的状态字段。
-7. 保留并扩展共享 DDL 计算工具和测试。
-8. 实现 `/` 公开只读看板。
-9. 实现管理密码 session。
-10. 实现受保护管理页 `/manage`。
-11. 实现公开读取 API 和受保护写入 API。
-12. 基于 SQLite 实现邮件提醒 worker。
-13. 添加 Dockerfile 和带持久化 `data` 挂载的 Docker Compose 配置。
-14. 添加本地开发、部署和 SQLite 备份说明。
-15. 进行本地和 Docker 环境验证。
+6. 添加生产迁移前的 SQLite 文件准备脚本。
+7. 保留 `Task` 和 `ReminderLog` 领域模型，并调整为 SQLite 兼容的状态字段。
+8. 保留并扩展共享 DDL 计算工具和测试。
+9. 实现 `/` 公开只读看板。
+10. 实现管理密码 session。
+11. 实现受保护管理页 `/manage`。
+12. 实现公开读取 API 和受保护写入 API。
+13. 基于 SQLite 实现邮件提醒 worker。
+14. 添加 Dockerfile 和带持久化 `data` 挂载的 Docker Compose 配置。
+15. 添加本地开发、部署和 SQLite 备份说明。
+16. 进行本地和 Docker 环境验证。
 
 ## 测试计划
 
@@ -409,6 +412,7 @@ TZ=Asia/Shanghai
 - 将 PostgreSQL migration 替换为 SQLite migration。
 - 移除 PostgreSQL adapter 和 `pg`。
 - 添加 SQLite adapter。
+- 添加 `db:ensure` / `db:migrate` 脚本，确保 `prisma migrate deploy` 前 SQLite 文件已存在。
 - 保留 `Task` 和 `ReminderLog`。
 - 保留共享日期和进度计算工具函数。
 - 保留进度、剩余时间、计算状态和提醒去重逻辑测试。
@@ -417,6 +421,7 @@ TZ=Asia/Shanghai
 
 - Prisma 可以通过 SQLite 校验。
 - 存在 SQLite migration。
+- 可以通过 `npm run db:migrate` 应用 SQLite migration。
 - `npm test`、`npm run lint`、`npm run format` 和 `npm run build` 通过。
 
 ### 阶段 3：公开看板和管理认证
