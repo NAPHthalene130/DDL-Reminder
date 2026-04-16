@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { hasManageSession } from "@/lib/manage-auth";
+import { TaskDashboard } from "../task-dashboard";
 import { ManageLoginForm } from "./login-form";
 import { ManageLogoutButton } from "./logout-button";
 
@@ -38,18 +39,13 @@ export default async function ManagePage() {
               任务管理
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--muted-foreground)]">
-              这里会承载任务新增、编辑、完成、归档和删除操作。公开首页继续保持只读。
+              新增、编辑、完成、归档和删除都在这里处理。公开首页继续保持只读。
             </p>
           </div>
           <ManageLogoutButton />
         </header>
 
-        <section className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--panel)] p-8 text-center">
-          <p className="text-lg font-semibold">管理界面认证已就绪</p>
-          <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
-            Phase 4 会接入任务 API，Phase 5 会把这里变成完整的任务管理界面。
-          </p>
-        </section>
+        <TaskDashboard mode="manage" />
       </section>
     </main>
   );

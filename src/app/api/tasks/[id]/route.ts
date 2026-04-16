@@ -3,6 +3,7 @@ import { jsonError, validationError } from "@/lib/api-response";
 import { getPrisma } from "@/lib/prisma";
 import { requireManageSession } from "@/lib/task-auth";
 import {
+  isValidTaskDateRange,
   normalizeOptionalDescription,
   taskIdSchema,
   updateTaskSchema
@@ -35,6 +36,25 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const prisma = getPrisma();
+  const existingTask = await prisma.task
+    .findUnique({
+      where: {
+        id: taskId
+      }
+    })
+    .catch(() => null);
+
+  if (!existingTask) {
+    return jsonError("Task not found.", 404);
+  }
+
+  const nextStartAt = parsed.data.startAt ?? existingTask.startAt;
+  const nextDueAt = parsed.data.dueAt ?? existingTask.dueAt;
+
+  if (!isValidTaskDateRange(nextStartAt, nextDueAt)) {
+    return jsonError("DDL time must be later than start time.", 400);
+  }
+
   const task = await prisma.task
     .update({
       where: {

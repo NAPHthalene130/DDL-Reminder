@@ -37,13 +37,12 @@ export async function POST(request: Request) {
     return validationError(parsed.error);
   }
 
-  const now = new Date();
   const prisma = getPrisma();
   const task = await prisma.task.create({
     data: {
       title: parsed.data.title,
       description: normalizeOptionalDescription(parsed.data.description),
-      startAt: parsed.data.startAt ?? now,
+      startAt: parsed.data.startAt,
       dueAt: parsed.data.dueAt
     }
   });
