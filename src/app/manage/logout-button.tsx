@@ -17,12 +17,12 @@ export function ManageLogoutButton() {
 
   return (
     <button
-      className="h-10 rounded-md border border-[var(--border)] bg-[var(--panel)] px-4 text-sm font-semibold text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-60"
+      className="h-10 rounded-md border border-red-500 bg-red-600 px-4 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
       disabled={isSubmitting}
       onClick={handleLogout}
       type="button"
     >
-      {isSubmitting ? "退出中..." : "退出管理"}
+      {isSubmitting ? "退出中..." : "退出登录"}
     </button>
   );
 }

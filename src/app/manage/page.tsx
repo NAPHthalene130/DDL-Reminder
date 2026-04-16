@@ -1,7 +1,7 @@
+import Link from "next/link";
 import { hasManageSession } from "@/lib/manage-auth";
 import { TaskDashboard } from "../task-dashboard";
 import { ManageLoginForm } from "./login-form";
-import { ManageLogoutButton } from "./logout-button";
 
 export default async function ManagePage() {
   const isAuthenticated = await hasManageSession();
@@ -23,17 +23,26 @@ export default async function ManagePage() {
   return (
     <main className="min-h-screen px-5 py-6 sm:px-6 lg:px-8">
       <section className="mx-auto flex max-w-6xl flex-col gap-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-normal text-[var(--foreground)]">
-              任务配置
-            </h1>
-            <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-              管理你的 DDL 清单。
-            </p>
-          </div>
-          <ManageLogoutButton />
-        </div>
+        <Link
+          aria-label="退出设置"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--panel)] text-[var(--foreground)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
+          href="/"
+          title="退出设置"
+        >
+          <svg
+            aria-hidden="true"
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M19 12H5" />
+            <path d="m12 19-7-7 7-7" />
+          </svg>
+        </Link>
 
         <TaskDashboard mode="manage" />
       </section>

@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const MANAGE_SESSION_COOKIE = "ddl_manage_session";
-export const MANAGE_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24;
+export const MANAGE_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
 type ManageSessionPayload = {
   version: 1;

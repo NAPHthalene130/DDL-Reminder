@@ -53,6 +53,10 @@ const EMPTY_FORM = {
   dueAt: ""
 };
 
+const PROGRESS_START_COLOR = "#4bae50";
+const PROGRESS_MID_COLOR = "#f5c84c";
+const PROGRESS_END_COLOR = "#ff0000";
+
 const STATUS_RANK: Record<TaskStatusValue, number> = {
   ACTIVE: 0,
   COMPLETED: 1,
@@ -64,38 +68,31 @@ const STATUS_META: Record<
   {
     label: string;
     toneClass: string;
-    barClass: string;
   }
 > = {
   normal: {
     label: "正常",
-    toneClass: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
-    barClass: "bg-emerald-400"
+    toneClass: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
   },
   approaching: {
     label: "临近",
-    toneClass: "border-amber-400/30 bg-amber-400/10 text-amber-200",
-    barClass: "bg-amber-300"
+    toneClass: "border-amber-400/30 bg-amber-400/10 text-amber-200"
   },
   due_today: {
     label: "今天截止",
-    toneClass: "border-yellow-300/30 bg-yellow-300/10 text-yellow-100",
-    barClass: "bg-yellow-300"
+    toneClass: "border-yellow-300/30 bg-yellow-300/10 text-yellow-100"
   },
   overdue: {
     label: "已逾期",
-    toneClass: "border-rose-400/30 bg-rose-400/10 text-rose-200",
-    barClass: "bg-rose-400"
+    toneClass: "border-rose-400/30 bg-rose-400/10 text-rose-200"
   },
   completed: {
     label: "已完成",
-    toneClass: "border-stone-400/30 bg-stone-400/10 text-stone-200",
-    barClass: "bg-stone-400"
+    toneClass: "border-stone-400/30 bg-stone-400/10 text-stone-200"
   },
   archived: {
     label: "已归档",
-    toneClass: "border-stone-500/30 bg-stone-500/10 text-stone-400",
-    barClass: "bg-stone-500"
+    toneClass: "border-stone-500/30 bg-stone-500/10 text-stone-400"
   }
 };
 
@@ -138,7 +135,7 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
   useEffect(() => {
     const timer = window.setInterval(() => {
       setNow(new Date());
-    }, 60 * 1000);
+    }, 1000);
 
     return () => {
       window.clearInterval(timer);
@@ -542,8 +539,11 @@ function TaskCard({
         </div>
         <div className="h-2.5 overflow-hidden rounded-md bg-[var(--muted)]">
           <div
-            className={`h-full rounded-md transition-[width] ${meta.barClass}`}
-            style={{ width: `${task.progress}%` }}
+            className="h-full rounded-md transition-[width]"
+            style={{
+              width: `${task.progress}%`,
+              backgroundColor: getProgressColor(task.progress)
+            }}
           />
         </div>
         <div className="mt-2 flex flex-col gap-1 text-xs text-[var(--muted-foreground)] sm:flex-row sm:justify-between">
@@ -712,6 +712,45 @@ function getRemainingText(status: TaskStatusValue, dueAt: Date, now: Date) {
   }
 
   return formatDuration(remaining.totalMs);
+}
+
+function getProgressColor(progress: number) {
+  const clampedProgress = Math.max(0, Math.min(100, progress));
+  const startColor = hexToRgb(PROGRESS_START_COLOR);
+  const midColor = hexToRgb(PROGRESS_MID_COLOR);
+  const endColor = hexToRgb(PROGRESS_END_COLOR);
+
+  if (clampedProgress <= 50) {
+    return rgbToCss(mixRgb(startColor, midColor, clampedProgress / 50));
+  }
+
+  return rgbToCss(mixRgb(midColor, endColor, (clampedProgress - 50) / 50));
+}
+
+function hexToRgb(hex: string) {
+  const normalizedHex = hex.replace("#", "");
+
+  return {
+    red: Number.parseInt(normalizedHex.slice(0, 2), 16),
+    green: Number.parseInt(normalizedHex.slice(2, 4), 16),
+    blue: Number.parseInt(normalizedHex.slice(4, 6), 16)
+  };
+}
+
+function mixRgb(
+  from: ReturnType<typeof hexToRgb>,
+  to: ReturnType<typeof hexToRgb>,
+  amount: number
+) {
+  return {
+    red: Math.round(from.red + (to.red - from.red) * amount),
+    green: Math.round(from.green + (to.green - from.green) * amount),
+    blue: Math.round(from.blue + (to.blue - from.blue) * amount)
+  };
+}
+
+function rgbToCss({ blue, green, red }: ReturnType<typeof hexToRgb>) {
+  return `rgb(${red} ${green} ${blue})`;
 }
 
 function formatDuration(totalMs: number) {
