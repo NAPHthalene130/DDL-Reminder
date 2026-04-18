@@ -329,7 +329,6 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
 
           {activeAction === "add" ? (
             <section className="max-w-3xl">
-              <TaskEditorHeader eyebrow="添加任务" title="写下新的 DDL" />
               <TaskEditorForm
                 form={form}
                 isSubmitting={isSubmitting}
@@ -350,12 +349,9 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
                 onEdit={startEditing}
                 tasks={visibleTasks}
               />
-              <section>
-                <TaskEditorHeader
-                  eyebrow="编辑任务"
-                  title={editingTaskId ? "调整 DDL 信息" : "选择一个任务"}
-                />
-                {editingTaskId ? (
+              {editingTaskId ? (
+                <section>
+                  <TaskEditorHeader eyebrow="编辑任务" title="调整 DDL 信息" />
                   <TaskEditorForm
                     form={form}
                     isSubmitting={isSubmitting}
@@ -364,18 +360,13 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
                     submitLabel="保存修改"
                     submittingLabel="保存中..."
                   />
-                ) : (
-                  <p className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--panel)] p-8 text-sm text-[var(--muted-foreground)]">
-                    从左侧任务列表点击“编辑”后，这里会显示编辑表单。
-                  </p>
-                )}
-              </section>
+                </section>
+              ) : null}
             </section>
           ) : null}
 
           {activeAction === "delete" ? (
             <section>
-              <TaskEditorHeader eyebrow="删除任务" title="选择要删除的 DDL" />
               <TaskList
                 busyTaskId={busyTaskId}
                 isLoading={isLoading}
@@ -450,7 +441,6 @@ function TaskEditorForm({
               title: event.target.value
             }))
           }
-          placeholder="例如：提交课程论文"
           required
           value={form.title}
         />
@@ -466,7 +456,6 @@ function TaskEditorForm({
               description: event.target.value
             }))
           }
-          placeholder="材料、链接、提交要求..."
           value={form.description}
         />
       </label>
