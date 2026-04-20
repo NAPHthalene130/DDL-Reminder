@@ -51,7 +51,7 @@ export function RegisterForm() {
 
   if (isRegistered) {
     return (
-      <div className="mt-8 rounded-md border border-[#4bae50]/40 bg-[#4bae50]/15 px-4 py-3 text-sm leading-6">
+      <div className="mt-6 rounded-md border border-[#4bae50]/40 bg-[#4bae50]/15 px-4 py-3 text-sm leading-6">
         <p className="font-semibold text-[#7ee084]">注册成功</p>
         <p className="mt-2 text-[var(--foreground)]">
           请检查邮箱并点击激活链接，激活后就可以登录使用。
@@ -67,7 +67,7 @@ export function RegisterForm() {
   }
 
   return (
-    <form className="mt-8 flex flex-col gap-4" onSubmit={handleSubmit}>
+    <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit}>
       <label className="flex flex-col gap-2 text-sm font-medium">
         用户名
         <input

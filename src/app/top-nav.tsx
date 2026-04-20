@@ -26,7 +26,7 @@ export async function TopNav() {
           ) : (
             <>
               <Link
-                className="text-sm font-semibold text-[var(--foreground)]"
+                className="rounded-md border border-[var(--border)] bg-[var(--panel-strong)] px-4 py-2 text-sm font-semibold text-[var(--foreground)]"
                 href="/login"
               >
                 登录
