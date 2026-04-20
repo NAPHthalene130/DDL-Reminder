@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { jsonError, validationError } from "@/lib/api-response";
 import { getPrisma } from "@/lib/prisma";
 import { requireUserSession } from "@/lib/task-auth";
+import { TASK_ERROR_MESSAGES } from "@/lib/task-error-messages";
 import {
   createTaskSchema,
   normalizeOptionalDescription
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
   });
 
   if (!task) {
-    return jsonError("Failed to create task.", 500);
+    return jsonError(TASK_ERROR_MESSAGES.createFailed, 500);
   }
 
   return NextResponse.json({ task }, { status: 201 });

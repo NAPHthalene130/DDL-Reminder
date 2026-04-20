@@ -7,6 +7,7 @@ export const AUTH_ERROR_MESSAGES = {
   identifierRequired: "请输入邮箱或用户名。",
   invalidCredentials: "邮箱/用户名或密码不正确。",
   invalidRequest: "请求参数无效。",
+  loginRequired: "请先登录。",
   passwordRequired: "请输入密码。",
   passwordTooLong: "密码最多不能超过 128 个字符。",
   passwordTooShort: "密码至少需要 6 个字符。",

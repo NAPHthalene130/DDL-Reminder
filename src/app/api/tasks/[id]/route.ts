@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { jsonError, validationError } from "@/lib/api-response";
 import { getPrisma } from "@/lib/prisma";
 import { requireUserSession } from "@/lib/task-auth";
+import { TASK_ERROR_MESSAGES } from "@/lib/task-error-messages";
 import {
   isValidTaskDateRange,
   normalizeOptionalDescription,
@@ -25,7 +26,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   const taskId = await parseTaskId(context);
 
   if (!taskId) {
-    return jsonError("Invalid task id.", 400);
+    return jsonError(TASK_ERROR_MESSAGES.idInvalid, 400);
   }
 
   const body = await request.json().catch(() => null);
@@ -46,14 +47,14 @@ export async function PATCH(request: Request, context: RouteContext) {
     .catch(() => null);
 
   if (!existingTask) {
-    return jsonError("Task not found.", 404);
+    return jsonError(TASK_ERROR_MESSAGES.notFound, 404);
   }
 
   const nextStartAt = parsed.data.startAt ?? existingTask.startAt;
   const nextDueAt = parsed.data.dueAt ?? existingTask.dueAt;
 
   if (!isValidTaskDateRange(nextStartAt, nextDueAt)) {
-    return jsonError("DDL time must be later than start time.", 400);
+    return jsonError(TASK_ERROR_MESSAGES.dateRangeInvalid, 400);
   }
 
   const updateResult = await prisma.task
@@ -80,7 +81,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     .catch(() => null);
 
   if (!updateResult?.count) {
-    return jsonError("Task not found.", 404);
+    return jsonError(TASK_ERROR_MESSAGES.notFound, 404);
   }
 
   const task = await prisma.task.findUnique({
@@ -102,7 +103,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
   const taskId = await parseTaskId(context);
 
   if (!taskId) {
-    return jsonError("Invalid task id.", 400);
+    return jsonError(TASK_ERROR_MESSAGES.idInvalid, 400);
   }
 
   const prisma = getPrisma();
@@ -116,7 +117,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
     .catch(() => null);
 
   if (!task?.count) {
-    return jsonError("Task not found.", 404);
+    return jsonError(TASK_ERROR_MESSAGES.notFound, 404);
   }
 
   return NextResponse.json({ ok: true });

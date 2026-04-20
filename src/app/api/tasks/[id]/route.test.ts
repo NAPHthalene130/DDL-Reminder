@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TASK_ERROR_MESSAGES } from "@/lib/task-error-messages";
 import { DELETE, PATCH } from "./route";
 
 const mocks = vi.hoisted(() => {
@@ -66,7 +67,7 @@ describe("task detail route", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
-      error: "DDL time must be later than start time."
+      error: TASK_ERROR_MESSAGES.dateRangeInvalid
     });
     expect(mocks.prisma.task.updateMany).not.toHaveBeenCalled();
   });
@@ -124,7 +125,7 @@ describe("task detail route", () => {
 
     expect(response.status).toBe(404);
     await expect(response.json()).resolves.toEqual({
-      error: "Task not found."
+      error: TASK_ERROR_MESSAGES.notFound
     });
     expect(mocks.prisma.task.updateMany).not.toHaveBeenCalled();
   });

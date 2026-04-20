@@ -1,4 +1,5 @@
 import { jsonError } from "@/lib/api-response";
+import { AUTH_ERROR_MESSAGES } from "@/lib/auth-error-messages";
 import { getCurrentSession } from "@/lib/auth-session";
 
 export async function requireUserSession() {
@@ -7,7 +8,7 @@ export async function requireUserSession() {
   if (!session) {
     return {
       session: null,
-      response: jsonError("Login required.", 401)
+      response: jsonError(AUTH_ERROR_MESSAGES.loginRequired, 401)
     };
   }
 

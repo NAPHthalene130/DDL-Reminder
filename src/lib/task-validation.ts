@@ -1,12 +1,13 @@
 import { z } from "zod";
+import { TASK_ERROR_MESSAGES } from "./task-error-messages";
 
-export const taskIdSchema = z.string().min(1);
+export const taskIdSchema = z.string().min(1, TASK_ERROR_MESSAGES.idInvalid);
 
 const updateTaskFieldsSchema = z.object({
-  title: z.string().trim().min(1, "Task title is required."),
+  title: z.string().trim().min(1, TASK_ERROR_MESSAGES.titleRequired),
   description: z.string().trim().optional(),
-  startAt: z.coerce.date().optional(),
-  dueAt: z.coerce.date()
+  startAt: z.coerce.date({ error: TASK_ERROR_MESSAGES.dateInvalid }).optional(),
+  dueAt: z.coerce.date({ error: TASK_ERROR_MESSAGES.dateInvalid })
 });
 
 const createTaskFieldsSchema = updateTaskFieldsSchema.extend({
@@ -18,7 +19,7 @@ export const createTaskSchema = createTaskFieldsSchema.superRefine(
     if (data.dueAt.getTime() <= data.startAt.getTime()) {
       context.addIssue({
         code: "custom",
-        message: "DDL time must be later than start time.",
+        message: TASK_ERROR_MESSAGES.dateRangeInvalid,
         path: ["dueAt"]
       });
     }
@@ -35,7 +36,7 @@ export const updateTaskSchema = updateTaskFieldsSchema
     ) {
       context.addIssue({
         code: "custom",
-        message: "DDL time must be later than start time.",
+        message: TASK_ERROR_MESSAGES.dateRangeInvalid,
         path: ["dueAt"]
       });
     }

@@ -4,6 +4,7 @@ import {
   normalizeOptionalDescription,
   updateTaskSchema
 } from "./task-validation";
+import { TASK_ERROR_MESSAGES } from "./task-error-messages";
 
 describe("createTaskSchema", () => {
   it("accepts a valid task payload", () => {
@@ -24,6 +25,12 @@ describe("createTaskSchema", () => {
     });
 
     expect(result.success).toBe(false);
+
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe(
+        TASK_ERROR_MESSAGES.titleRequired
+      );
+    }
   });
 
   it("rejects invalid dates", () => {
@@ -33,6 +40,12 @@ describe("createTaskSchema", () => {
     });
 
     expect(result.success).toBe(false);
+
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe(
+        TASK_ERROR_MESSAGES.dateInvalid
+      );
+    }
   });
 
   it("rejects a due time before start time", () => {
@@ -43,6 +56,12 @@ describe("createTaskSchema", () => {
     });
 
     expect(result.success).toBe(false);
+
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe(
+        TASK_ERROR_MESSAGES.dateRangeInvalid
+      );
+    }
   });
 });
 
@@ -62,6 +81,12 @@ describe("updateTaskSchema", () => {
     });
 
     expect(result.success).toBe(false);
+
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe(
+        TASK_ERROR_MESSAGES.dateRangeInvalid
+      );
+    }
   });
 });
 
