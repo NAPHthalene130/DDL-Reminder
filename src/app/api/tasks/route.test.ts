@@ -1,0 +1,119 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { GET, POST } from "./route";
+
+const mocks = vi.hoisted(() => {
+  const prisma = {
+    task: {
+      findMany: vi.fn(),
+      create: vi.fn()
+    }
+  };
+
+  return {
+    getPrisma: vi.fn(),
+    prisma,
+    requireUserSession: vi.fn()
+  };
+});
+
+vi.mock("@/lib/prisma", () => ({
+  getPrisma: mocks.getPrisma
+}));
+
+vi.mock("@/lib/task-auth", () => ({
+  requireUserSession: mocks.requireUserSession
+}));
+
+describe("tasks route", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getPrisma.mockReturnValue(mocks.prisma);
+    mocks.requireUserSession.mockResolvedValue({
+      response: null,
+      session: {
+        user: {
+          id: "user_1"
+        }
+      }
+    });
+  });
+
+  it("lists only the current user's tasks in status and due-date order", async () => {
+    const tasks = [
+      {
+        id: "task_1",
+        userId: "user_1"
+      }
+    ];
+    mocks.prisma.task.findMany.mockResolvedValue(tasks);
+
+    const response = await GET();
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ tasks });
+    expect(mocks.prisma.task.findMany).toHaveBeenCalledWith({
+      where: {
+        userId: "user_1"
+      },
+      orderBy: [
+        {
+          status: "asc"
+        },
+        {
+          dueAt: "asc"
+        }
+      ]
+    });
+  });
+
+  it("creates a task owned by the current user and normalizes empty descriptions", async () => {
+    const task = {
+      id: "task_1",
+      userId: "user_1",
+      title: "Submit report"
+    };
+    mocks.prisma.task.create.mockResolvedValue(task);
+
+    const response = await POST(
+      new Request("http://localhost/api/tasks", {
+        method: "POST",
+        body: JSON.stringify({
+          title: "Submit report",
+          description: "",
+          startAt: "2026-04-20T01:00:00.000Z",
+          dueAt: "2026-04-20T02:00:00.000Z"
+        })
+      })
+    );
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toEqual({ task });
+    expect(mocks.prisma.task.create).toHaveBeenCalledWith({
+      data: {
+        userId: "user_1",
+        title: "Submit report",
+        description: null,
+        startAt: new Date("2026-04-20T01:00:00.000Z"),
+        dueAt: new Date("2026-04-20T02:00:00.000Z")
+      }
+    });
+  });
+
+  it("rejects invalid task payloads before writing", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/tasks", {
+        method: "POST",
+        body: JSON.stringify({
+          title: "",
+          dueAt: "not-a-date"
+        })
+      })
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      error: "Invalid request."
+    });
+    expect(mocks.prisma.task.create).not.toHaveBeenCalled();
+  });
+});
