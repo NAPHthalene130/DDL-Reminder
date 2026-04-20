@@ -47,6 +47,13 @@ type ApiTaskResponse = {
 };
 
 type WorkspaceAction = "view" | "add" | "edit" | "delete";
+type SidebarIconName =
+  | "add"
+  | "collapse"
+  | "delete"
+  | "edit"
+  | "group"
+  | "view";
 
 const EMPTY_FORM = {
   title: "",
@@ -57,18 +64,22 @@ const EMPTY_FORM = {
 
 const EDIT_ACTIONS: Array<{
   id: Exclude<WorkspaceAction, "view">;
+  icon: SidebarIconName;
   label: string;
 }> = [
   {
     id: "add",
+    icon: "add",
     label: "添加任务"
   },
   {
     id: "edit",
+    icon: "edit",
     label: "编辑任务"
   },
   {
     id: "delete",
+    icon: "delete",
     label: "删除任务"
   }
 ];
@@ -614,42 +625,86 @@ function TaskSidebar({
   onSwitch: (action: WorkspaceAction) => void;
 }) {
   const [isEditGroupExpanded, setIsEditGroupExpanded] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const editGroupIsActive = activeAction !== "view";
 
   return (
-    <aside className="h-full w-72 shrink-0 overflow-y-auto border-r border-[var(--border)] bg-[#171918] px-4 py-5">
+    <aside
+      className={`h-full shrink-0 overflow-y-auto border-r border-[var(--border)] bg-[#171918] py-5 transition-[width,padding] duration-300 ease-in-out ${
+        isCollapsed ? "w-20 px-3" : "w-72 px-4"
+      }`}
+    >
+      <div
+        className={`mb-4 flex ${
+          isCollapsed ? "justify-center" : "justify-end"
+        }`}
+      >
+        <button
+          aria-label={isCollapsed ? "展开侧边导航栏" : "收起侧边导航栏"}
+          className="inline-flex size-10 items-center justify-center rounded-md border border-[var(--border)] text-[var(--muted-foreground)] transition hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+          onClick={() => setIsCollapsed((currentValue) => !currentValue)}
+          title={isCollapsed ? "展开侧边导航栏" : "收起侧边导航栏"}
+          type="button"
+        >
+          <SidebarIcon
+            className={`transition-transform duration-300 ${
+              isCollapsed ? "rotate-180" : ""
+            }`}
+            name="collapse"
+          />
+        </button>
+      </div>
+
       <nav className="flex flex-col gap-2">
         <TreeButton
           active={activeAction === "view"}
+          icon="view"
           label="查看任务"
+          collapsed={isCollapsed}
           onClick={() => onSwitch("view")}
         />
 
         <div className="mt-2">
           <button
             aria-expanded={isEditGroupExpanded}
-            className={`flex w-full items-center gap-3 rounded-md border px-3 py-3 text-left text-sm font-semibold transition ${
-              activeAction === "view"
-                ? "border-transparent text-[var(--primary)] hover:bg-[var(--muted)]"
-                : "border-[var(--primary)] bg-[#263245] text-[var(--primary)]"
-            }`}
+            aria-label="任务编辑"
+            className={`flex w-full items-center overflow-hidden rounded-md border px-3 py-3 text-left text-sm font-semibold transition ${
+              editGroupIsActive
+                ? "border-[var(--primary)] bg-[#263245] text-[var(--primary)]"
+                : "border-transparent text-[var(--primary)] hover:bg-[var(--muted)]"
+            } ${isCollapsed ? "justify-center gap-0" : "gap-3"}`}
             onClick={() => setIsEditGroupExpanded((isExpanded) => !isExpanded)}
+            title="任务编辑"
             type="button"
           >
-            <span className="flex-1">任务编辑</span>
+            <SidebarIcon name="group" />
             <span
-              className={`text-xs transition-transform ${
-                isEditGroupExpanded ? "" : "rotate-180"
+              className={`min-w-0 overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ${
+                isCollapsed ? "max-w-0 opacity-0" : "max-w-32 opacity-100"
               }`}
+            >
+              任务编辑
+            </span>
+            <span
+              className={`shrink-0 overflow-hidden text-xs transition-[max-width,opacity,transform] duration-300 ${
+                isEditGroupExpanded ? "" : "rotate-180"
+              } ${isCollapsed ? "max-w-0 opacity-0" : "max-w-4 opacity-100"}`}
             >
               ▲
             </span>
           </button>
 
           {isEditGroupExpanded ? (
-            <div className="mt-1 flex flex-col gap-1 pl-6">
+            <div
+              className={`mt-1 flex flex-col gap-1 transition-[padding] duration-300 ${
+                isCollapsed ? "pl-0" : "pl-6"
+              }`}
+            >
               {EDIT_ACTIONS.map((action) => (
                 <TreeButton
                   active={activeAction === action.id}
+                  collapsed={isCollapsed}
+                  icon={action.icon}
                   key={action.id}
                   label={action.label}
                   onClick={() => onSwitch(action.id)}
@@ -665,25 +720,113 @@ function TaskSidebar({
 
 function TreeButton({
   active,
+  collapsed,
+  icon,
   label,
   onClick
 }: {
   active: boolean;
+  collapsed: boolean;
+  icon: SidebarIconName;
   label: string;
   onClick: () => void;
 }) {
   return (
     <button
-      className={`flex w-full items-center gap-3 rounded-md border px-3 py-3 text-left text-sm font-semibold transition ${
+      aria-label={label}
+      className={`flex w-full items-center overflow-hidden rounded-md border px-3 py-3 text-left text-sm font-semibold transition ${
         active
           ? "border-[var(--primary)] bg-[#263245] text-[var(--primary)]"
           : "border-transparent text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-      }`}
+      } ${collapsed ? "justify-center gap-0" : "gap-3"}`}
       onClick={onClick}
+      title={label}
       type="button"
     >
-      <span>{label}</span>
+      <SidebarIcon name={icon} />
+      <span
+        className={`min-w-0 overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ${
+          collapsed ? "max-w-0 opacity-0" : "max-w-32 opacity-100"
+        }`}
+      >
+        {label}
+      </span>
     </button>
+  );
+}
+
+function SidebarIcon({
+  className = "",
+  name
+}: {
+  className?: string;
+  name: SidebarIconName;
+}) {
+  const commonProps = {
+    "aria-hidden": true,
+    className: `h-5 w-5 shrink-0 ${className}`,
+    fill: "none",
+    stroke: "currentColor",
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    strokeWidth: "2",
+    viewBox: "0 0 24 24"
+  };
+
+  if (name === "view") {
+    return (
+      <svg {...commonProps}>
+        <path d="M4 6h16" />
+        <path d="M4 12h16" />
+        <path d="M4 18h10" />
+      </svg>
+    );
+  }
+
+  if (name === "group") {
+    return (
+      <svg {...commonProps}>
+        <path d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+        <path d="M8 9h8" />
+        <path d="M8 15h5" />
+      </svg>
+    );
+  }
+
+  if (name === "add") {
+    return (
+      <svg {...commonProps}>
+        <path d="M12 5v14" />
+        <path d="M5 12h14" />
+      </svg>
+    );
+  }
+
+  if (name === "edit") {
+    return (
+      <svg {...commonProps}>
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z" />
+      </svg>
+    );
+  }
+
+  if (name === "delete") {
+    return (
+      <svg {...commonProps}>
+        <path d="M4 7h16" />
+        <path d="M10 11v6" />
+        <path d="M14 11v6" />
+        <path d="M6 7l1 13h10l1-13" />
+        <path d="M9 7V4h6v3" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...commonProps}>
+      <path d="M15 6 9 12l6 6" />
+    </svg>
   );
 }
 
