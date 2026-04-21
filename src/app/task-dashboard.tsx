@@ -827,7 +827,7 @@ function TaskSidebar({
 }) {
   const [isEditGroupExpanded, setIsEditGroupExpanded] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const editGroupIsActive = activeAction !== "view";
+  const editGroupIsActive = activeAction === "add" || activeAction === "edit";
 
   return (
     <aside
@@ -886,33 +886,35 @@ function TaskSidebar({
             >
               任务编辑
             </span>
-            <span
-              className={`shrink-0 overflow-hidden text-xs transition-[max-width,opacity,transform] duration-300 ${
-                isEditGroupExpanded ? "" : "rotate-180"
-              } ${isCollapsed ? "max-w-0 opacity-0" : "max-w-4 opacity-100"}`}
-            >
-              ▲
-            </span>
+            <ChevronIcon
+              className={`transition-[max-width,opacity,transform] duration-300 ${
+                isEditGroupExpanded ? "rotate-180" : "rotate-0"
+              } ${isCollapsed ? "max-w-0 opacity-0" : "max-w-5 opacity-100"}`}
+            />
           </button>
 
-          {isEditGroupExpanded ? (
-            <div
-              className={`mt-1 flex flex-col gap-1 transition-[padding] duration-300 ${
-                isCollapsed ? "pl-0" : "pl-6"
-              }`}
-            >
-              {EDIT_ACTIONS.map((action) => (
-                <TreeButton
-                  active={activeAction === action.id}
-                  collapsed={isCollapsed}
-                  icon={action.icon}
-                  key={action.id}
-                  label={action.label}
-                  onClick={() => onSwitch(action.id)}
-                />
-              ))}
+          <div
+            className={`grid overflow-hidden transition-[grid-template-rows,opacity,transform,padding] duration-300 ease-in-out ${
+              isEditGroupExpanded
+                ? "grid-rows-[1fr] opacity-100 translate-y-0"
+                : "grid-rows-[0fr] opacity-0 -translate-y-1"
+            } ${isCollapsed ? "pl-0" : "pl-6"}`}
+          >
+            <div className="min-h-0">
+              <div className="mt-1 flex flex-col gap-1">
+                {EDIT_ACTIONS.map((action) => (
+                  <TreeButton
+                    active={activeAction === action.id}
+                    collapsed={isCollapsed}
+                    icon={action.icon}
+                    key={action.id}
+                    label={action.label}
+                    onClick={() => onSwitch(action.id)}
+                  />
+                ))}
+              </div>
             </div>
-          ) : null}
+          </div>
         </div>
       </nav>
 
@@ -926,6 +928,23 @@ function TaskSidebar({
         />
       </div>
     </aside>
+  );
+}
+
+function ChevronIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={`h-5 w-5 shrink-0 overflow-hidden ${className}`}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
   );
 }
 
