@@ -156,10 +156,10 @@ describe("getDeadlineStatus", () => {
 
 describe("shouldSendReminder", () => {
   it("prevents duplicate reminder types for a task", () => {
-    expect(shouldSendReminder(["DUE_IN_24H"], "DUE_IN_24H")).toBe(false);
+    expect(shouldSendReminder(["DUE_IN_48H"], "DUE_IN_48H")).toBe(false);
   });
 
   it("allows reminder types that have not been sent", () => {
-    expect(shouldSendReminder(["DUE_IN_24H"], "DUE_IN_1H")).toBe(true);
+    expect(shouldSendReminder(["DUE_IN_48H"], "DUE_IN_2H")).toBe(true);
   });
 });

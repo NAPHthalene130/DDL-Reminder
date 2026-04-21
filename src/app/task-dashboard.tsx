@@ -167,6 +167,16 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
 
   useEffect(() => {
     const timer = window.setInterval(() => {
+      void loadTasks();
+    }, 60_000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [loadTasks]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
       setNow(new Date());
     }, 1000);
 

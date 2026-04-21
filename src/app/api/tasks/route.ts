@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { jsonError, validationError } from "@/lib/api-response";
 import { getPrisma } from "@/lib/prisma";
+import { sendDueTaskRemindersForUser } from "@/lib/task-reminders";
 import { requireUserSession } from "@/lib/task-auth";
 import { TASK_ERROR_MESSAGES } from "@/lib/task-error-messages";
 import {
@@ -16,6 +17,13 @@ export async function GET() {
   }
 
   const prisma = getPrisma();
+  await sendDueTaskRemindersForUser({
+    prisma,
+    userId: session.user.id
+  }).catch((error) => {
+    console.error("Failed to process task reminders.", error);
+  });
+
   const tasks = await prisma.task.findMany({
     where: {
       userId: session.user.id

@@ -1,4 +1,6 @@
 import nodemailer from "nodemailer";
+import { DEFAULT_TIME_ZONE } from "./deadline";
+import { ReminderTypeValue } from "./task-constants";
 
 type SendMailInput = {
   to: string;
@@ -62,6 +64,47 @@ export async function sendActivationEmail({
   });
 }
 
+export async function sendTaskDeadlineReminderEmail({
+  dueAt,
+  email,
+  reminderType,
+  taskTitle,
+  username
+}: {
+  dueAt: Date;
+  email: string;
+  reminderType: ReminderTypeValue;
+  taskTitle: string;
+  username: string;
+}) {
+  const reminderLabel =
+    reminderType === "DUE_IN_2H" ? "已进入紧急截止状态" : "已进入临期截止状态";
+  const dueAtText = formatDateTime(dueAt);
+  const subject =
+    reminderType === "DUE_IN_2H"
+      ? `紧急提醒：${taskTitle}`
+      : `临期提醒：${taskTitle}`;
+
+  await sendMail({
+    to: email,
+    subject,
+    text: [
+      `${username}，你好：`,
+      "",
+      `你的任务「${taskTitle}」${reminderLabel}。`,
+      `DDL：${dueAtText}`,
+      "",
+      "请及时处理。"
+    ].join("\n"),
+    html: `
+      <p>${escapeHtml(username)}，你好：</p>
+      <p>你的任务「${escapeHtml(taskTitle)}」${escapeHtml(reminderLabel)}。</p>
+      <p>DDL：${escapeHtml(dueAtText)}</p>
+      <p>请及时处理。</p>
+    `
+  });
+}
+
 function requiredEnv(name: string) {
   const value = process.env[name];
 
@@ -79,4 +122,16 @@ function escapeHtml(value: string) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function formatDateTime(date: Date) {
+  return new Intl.DateTimeFormat("zh-CN", {
+    timeZone: DEFAULT_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  }).format(date);
 }

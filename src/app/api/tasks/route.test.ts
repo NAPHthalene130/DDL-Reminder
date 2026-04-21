@@ -13,7 +13,8 @@ const mocks = vi.hoisted(() => {
   return {
     getPrisma: vi.fn(),
     prisma,
-    requireUserSession: vi.fn()
+    requireUserSession: vi.fn(),
+    sendDueTaskRemindersForUser: vi.fn()
   };
 });
 
@@ -25,11 +26,16 @@ vi.mock("@/lib/task-auth", () => ({
   requireUserSession: mocks.requireUserSession
 }));
 
+vi.mock("@/lib/task-reminders", () => ({
+  sendDueTaskRemindersForUser: mocks.sendDueTaskRemindersForUser
+}));
+
 describe("tasks route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getPrisma.mockReturnValue(mocks.prisma);
     mocks.prisma.task.findFirst.mockResolvedValue(null);
+    mocks.sendDueTaskRemindersForUser.mockResolvedValue(undefined);
     mocks.requireUserSession.mockResolvedValue({
       response: null,
       session: {
@@ -65,6 +71,10 @@ describe("tasks route", () => {
           dueAt: "asc"
         }
       ]
+    });
+    expect(mocks.sendDueTaskRemindersForUser).toHaveBeenCalledWith({
+      prisma: mocks.prisma,
+      userId: "user_1"
     });
   });
 

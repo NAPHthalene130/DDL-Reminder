@@ -16,7 +16,7 @@ export type DeadlineStatus =
   | "completed"
   | "archived";
 
-export type ReminderTypeLike = "DUE_IN_24H" | "DUE_IN_1H" | "OVERDUE";
+export type ReminderTypeLike = "DUE_IN_48H" | "DUE_IN_2H" | "OVERDUE";
 
 export type RemainingTimeParts = {
   totalMs: number;

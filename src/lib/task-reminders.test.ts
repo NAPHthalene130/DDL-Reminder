@@ -1,0 +1,165 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  getPendingDeadlineReminderType,
+  sendDueTaskRemindersForUser
+} from "./task-reminders";
+
+const mocks = vi.hoisted(() => ({
+  sendTaskDeadlineReminderEmail: vi.fn()
+}));
+
+vi.mock("./mailer", () => ({
+  sendTaskDeadlineReminderEmail: mocks.sendTaskDeadlineReminderEmail
+}));
+
+describe("getPendingDeadlineReminderType", () => {
+  it("returns the approaching reminder after a task crosses the 48-hour threshold", () => {
+    expect(
+      getPendingDeadlineReminderType({
+        createdAt: new Date("2026-04-20T00:00:00.000Z"),
+        dueAt: new Date("2026-04-23T00:00:00.000Z"),
+        now: new Date("2026-04-21T01:00:00.000Z"),
+        sentReminderTypes: [],
+        status: "ACTIVE"
+      })
+    ).toBe("DUE_IN_48H");
+  });
+
+  it("does not send an approaching reminder for a task created inside 48 hours", () => {
+    expect(
+      getPendingDeadlineReminderType({
+        createdAt: new Date("2026-04-20T00:00:00.000Z"),
+        dueAt: new Date("2026-04-21T00:00:00.000Z"),
+        now: new Date("2026-04-20T01:00:00.000Z"),
+        sentReminderTypes: [],
+        status: "ACTIVE"
+      })
+    ).toBeNull();
+  });
+
+  it("returns the urgent reminder when an approaching task crosses the 2-hour threshold", () => {
+    expect(
+      getPendingDeadlineReminderType({
+        createdAt: new Date("2026-04-20T00:00:00.000Z"),
+        dueAt: new Date("2026-04-20T03:00:00.000Z"),
+        now: new Date("2026-04-20T01:30:00.000Z"),
+        sentReminderTypes: [],
+        status: "ACTIVE"
+      })
+    ).toBe("DUE_IN_2H");
+  });
+
+  it("does not send an urgent reminder for a task created inside 2 hours", () => {
+    expect(
+      getPendingDeadlineReminderType({
+        createdAt: new Date("2026-04-20T00:00:00.000Z"),
+        dueAt: new Date("2026-04-20T01:00:00.000Z"),
+        now: new Date("2026-04-20T00:30:00.000Z"),
+        sentReminderTypes: [],
+        status: "ACTIVE"
+      })
+    ).toBeNull();
+  });
+
+  it("does not send duplicate reminder types", () => {
+    expect(
+      getPendingDeadlineReminderType({
+        createdAt: new Date("2026-04-20T00:00:00.000Z"),
+        dueAt: new Date("2026-04-20T03:00:00.000Z"),
+        now: new Date("2026-04-20T01:30:00.000Z"),
+        sentReminderTypes: ["DUE_IN_2H"],
+        status: "ACTIVE"
+      })
+    ).toBeNull();
+  });
+});
+
+describe("sendDueTaskRemindersForUser", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("reserves a reminder log before sending the reminder email", async () => {
+    const now = new Date("2026-04-21T01:00:00.000Z");
+    const prisma = createPrismaMock([
+      {
+        id: "task_1",
+        title: "Submit report",
+        dueAt: new Date("2026-04-23T00:00:00.000Z"),
+        createdAt: new Date("2026-04-20T00:00:00.000Z"),
+        status: "ACTIVE",
+        user: {
+          email: "user@example.com",
+          username: "Kyy"
+        },
+        reminderLogs: []
+      }
+    ]);
+
+    await sendDueTaskRemindersForUser({
+      now,
+      prisma,
+      userId: "user_1"
+    });
+
+    expect(prisma.reminderLog.create).toHaveBeenCalledWith({
+      data: {
+        taskId: "task_1",
+        reminderType: "DUE_IN_48H",
+        sentAt: now
+      }
+    });
+    expect(mocks.sendTaskDeadlineReminderEmail).toHaveBeenCalledWith({
+      dueAt: new Date("2026-04-23T00:00:00.000Z"),
+      email: "user@example.com",
+      reminderType: "DUE_IN_48H",
+      taskTitle: "Submit report",
+      username: "Kyy"
+    });
+  });
+
+  it("releases the reminder log when email sending fails so it can retry later", async () => {
+    const prisma = createPrismaMock([
+      {
+        id: "task_1",
+        title: "Submit report",
+        dueAt: new Date("2026-04-20T01:00:00.000Z"),
+        createdAt: new Date("2026-04-19T22:00:00.000Z"),
+        status: "ACTIVE",
+        user: {
+          email: "user@example.com",
+          username: "Kyy"
+        },
+        reminderLogs: []
+      }
+    ]);
+    mocks.sendTaskDeadlineReminderEmail.mockRejectedValueOnce(
+      new Error("SMTP failed")
+    );
+
+    await sendDueTaskRemindersForUser({
+      now: new Date("2026-04-20T00:00:00.000Z"),
+      prisma,
+      userId: "user_1"
+    });
+
+    expect(prisma.reminderLog.deleteMany).toHaveBeenCalledWith({
+      where: {
+        taskId: "task_1",
+        reminderType: "DUE_IN_2H"
+      }
+    });
+  });
+});
+
+function createPrismaMock(tasks: unknown[]) {
+  return {
+    task: {
+      findMany: vi.fn().mockResolvedValue(tasks)
+    },
+    reminderLog: {
+      create: vi.fn().mockResolvedValue({}),
+      deleteMany: vi.fn().mockResolvedValue({ count: 1 })
+    }
+  };
+}

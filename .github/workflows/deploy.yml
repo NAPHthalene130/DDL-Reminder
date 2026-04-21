@@ -81,5 +81,9 @@ jobs:
 
           ln -sfn "$DEPLOY_PATH/releases/$RELEASE_NAME" "$DEPLOY_PATH/current"
           docker image prune -f
-          find "$DEPLOY_PATH/releases" -mindepth 1 -maxdepth 1 -type d | sort | head -n -5 | xargs -r rm -rf
+          find "$DEPLOY_PATH/releases" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' \
+            | sort -n \
+            | head -n -5 \
+            | cut -d' ' -f2- \
+            | xargs -r rm -rf
           SCRIPT
