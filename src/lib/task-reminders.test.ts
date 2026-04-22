@@ -72,6 +72,20 @@ describe("getPendingDeadlineReminderType", () => {
       })
     ).toBeNull();
   });
+
+  it("uses custom reminder thresholds", () => {
+    expect(
+      getPendingDeadlineReminderType({
+        approachingThresholdMs: 24 * 60 * 60 * 1000,
+        createdAt: new Date("2026-04-20T00:00:00.000Z"),
+        dueAt: new Date("2026-04-21T12:00:00.000Z"),
+        now: new Date("2026-04-20T13:00:00.000Z"),
+        sentReminderTypes: [],
+        status: "ACTIVE",
+        urgentThresholdMs: 30 * 60 * 1000
+      })
+    ).toBe("DUE_IN_48H");
+  });
 });
 
 describe("sendDueTaskRemindersForUser", () => {
@@ -134,7 +148,9 @@ describe("sendDueTaskRemindersForUser", () => {
       }
     ]);
     prisma.user.findUnique.mockResolvedValueOnce({
-      emailReminderEnabled: false
+      emailReminderEnabled: false,
+      approachingReminderMinutes: 2880,
+      urgentReminderMinutes: 120
     });
 
     await sendDueTaskRemindersForUser({
@@ -144,6 +160,38 @@ describe("sendDueTaskRemindersForUser", () => {
     });
 
     expect(prisma.task.findMany).not.toHaveBeenCalled();
+    expect(prisma.reminderLog.create).not.toHaveBeenCalled();
+    expect(mocks.sendTaskDeadlineReminderEmail).not.toHaveBeenCalled();
+  });
+
+  it("uses the user's custom reminder thresholds when sending emails", async () => {
+    const now = new Date("2026-04-20T11:00:00.000Z");
+    const prisma = createPrismaMock([
+      {
+        id: "task_1",
+        title: "Submit report",
+        dueAt: new Date("2026-04-20T12:00:00.000Z"),
+        createdAt: new Date("2026-04-20T00:00:00.000Z"),
+        status: "ACTIVE",
+        user: {
+          email: "user@example.com",
+          username: "Kyy"
+        },
+        reminderLogs: []
+      }
+    ]);
+    prisma.user.findUnique.mockResolvedValueOnce({
+      emailReminderEnabled: true,
+      approachingReminderMinutes: 60,
+      urgentReminderMinutes: 30
+    });
+
+    await sendDueTaskRemindersForUser({
+      now,
+      prisma,
+      userId: "user_1"
+    });
+
     expect(prisma.reminderLog.create).not.toHaveBeenCalled();
     expect(mocks.sendTaskDeadlineReminderEmail).not.toHaveBeenCalled();
   });
@@ -186,7 +234,9 @@ function createPrismaMock(tasks: unknown[]) {
   return {
     user: {
       findUnique: vi.fn().mockResolvedValue({
-        emailReminderEnabled: true
+        emailReminderEnabled: true,
+        approachingReminderMinutes: 2880,
+        urgentReminderMinutes: 120
       })
     },
     task: {

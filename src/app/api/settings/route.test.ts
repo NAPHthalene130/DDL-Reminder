@@ -40,7 +40,9 @@ describe("settings route", () => {
 
   it("returns the current user's email reminder setting", async () => {
     mocks.prisma.user.findUnique.mockResolvedValue({
-      emailReminderEnabled: false
+      emailReminderEnabled: false,
+      approachingReminderMinutes: 1440,
+      urgentReminderMinutes: 30
     });
 
     const response = await GET();
@@ -48,7 +50,9 @@ describe("settings route", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       settings: {
-        emailReminderEnabled: false
+        emailReminderEnabled: false,
+        approachingReminderMinutes: 1440,
+        urgentReminderMinutes: 30
       }
     });
     expect(mocks.prisma.user.findUnique).toHaveBeenCalledWith({
@@ -56,21 +60,27 @@ describe("settings route", () => {
         id: "user_1"
       },
       select: {
-        emailReminderEnabled: true
+        emailReminderEnabled: true,
+        approachingReminderMinutes: true,
+        urgentReminderMinutes: true
       }
     });
   });
 
   it("updates the current user's email reminder setting", async () => {
     mocks.prisma.user.update.mockResolvedValue({
-      emailReminderEnabled: false
+      emailReminderEnabled: false,
+      approachingReminderMinutes: 1440,
+      urgentReminderMinutes: 30
     });
 
     const response = await PATCH(
       new Request("http://localhost/api/settings", {
         method: "PATCH",
         body: JSON.stringify({
-          emailReminderEnabled: false
+          emailReminderEnabled: false,
+          approachingReminderMinutes: 1440,
+          urgentReminderMinutes: 30
         })
       })
     );
@@ -78,7 +88,9 @@ describe("settings route", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       settings: {
-        emailReminderEnabled: false
+        emailReminderEnabled: false,
+        approachingReminderMinutes: 1440,
+        urgentReminderMinutes: 30
       }
     });
     expect(mocks.prisma.user.update).toHaveBeenCalledWith({
@@ -86,10 +98,14 @@ describe("settings route", () => {
         id: "user_1"
       },
       data: {
-        emailReminderEnabled: false
+        emailReminderEnabled: false,
+        approachingReminderMinutes: 1440,
+        urgentReminderMinutes: 30
       },
       select: {
-        emailReminderEnabled: true
+        emailReminderEnabled: true,
+        approachingReminderMinutes: true,
+        urgentReminderMinutes: true
       }
     });
   });

@@ -35,16 +35,22 @@ export async function PATCH(request: Request) {
       id: session.user.id
     },
     data: {
-      emailReminderEnabled: parsed.data.emailReminderEnabled
+      emailReminderEnabled: parsed.data.emailReminderEnabled,
+      approachingReminderMinutes: parsed.data.approachingReminderMinutes,
+      urgentReminderMinutes: parsed.data.urgentReminderMinutes
     },
     select: {
-      emailReminderEnabled: true
+      emailReminderEnabled: true,
+      approachingReminderMinutes: true,
+      urgentReminderMinutes: true
     }
   });
 
   return NextResponse.json({
     settings: {
-      emailReminderEnabled: user.emailReminderEnabled
+      emailReminderEnabled: user.emailReminderEnabled,
+      approachingReminderMinutes: user.approachingReminderMinutes,
+      urgentReminderMinutes: user.urgentReminderMinutes
     }
   });
 }
@@ -55,11 +61,15 @@ async function getUserSettings(userId: string) {
       id: userId
     },
     select: {
-      emailReminderEnabled: true
+      emailReminderEnabled: true,
+      approachingReminderMinutes: true,
+      urgentReminderMinutes: true
     }
   });
 
   return {
-    emailReminderEnabled: user?.emailReminderEnabled ?? true
+    emailReminderEnabled: user?.emailReminderEnabled ?? true,
+    approachingReminderMinutes: user?.approachingReminderMinutes ?? 2880,
+    urgentReminderMinutes: user?.urgentReminderMinutes ?? 120
   };
 }

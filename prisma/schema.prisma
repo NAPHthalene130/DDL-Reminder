@@ -14,6 +14,8 @@ model User {
   passwordHash            String
   emailVerifiedAt         DateTime?
   emailReminderEnabled    Boolean                  @default(true)
+  approachingReminderMinutes Int                   @default(2880)
+  urgentReminderMinutes      Int                   @default(120)
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
   sessions                Session[]

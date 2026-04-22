@@ -58,6 +58,11 @@ type ReminderSettings = {
   deadlineDuration: DurationValue;
 };
 
+type ReminderThresholds = {
+  approachingThresholdMs: number;
+  urgentThresholdMs: number;
+};
+
 type ApiTaskResponse = {
   task?: TaskDto;
   tasks?: TaskDto[];
@@ -70,6 +75,8 @@ type ApiTaskResponse = {
 type SettingsApiResponse = {
   settings?: {
     emailReminderEnabled?: boolean;
+    approachingReminderMinutes?: number;
+    urgentReminderMinutes?: number;
   };
   error?: string;
   issues?: Array<{
@@ -170,9 +177,10 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [activeAction, setActiveAction] = useState<WorkspaceAction>("view");
   const [form, setForm] = useState<TaskFormState>(() => createEmptyForm());
-  const [reminderSettings, setReminderSettings] = useState<ReminderSettings>(
-    DEFAULT_REMINDER_SETTINGS
-  );
+  const [appliedReminderSettings, setAppliedReminderSettings] =
+    useState<ReminderSettings>(DEFAULT_REMINDER_SETTINGS);
+  const [draftReminderSettings, setDraftReminderSettings] =
+    useState<ReminderSettings>(DEFAULT_REMINDER_SETTINGS);
   const [isSettingsLoading, setIsSettingsLoading] = useState(false);
   const [isSettingsSaving, setIsSettingsSaving] = useState(false);
   const [now, setNow] = useState(() => new Date());
@@ -212,7 +220,7 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
   }, [loadTasks]);
 
   useEffect(() => {
-    if (!isManageMode || activeAction !== "settings") {
+    if (!isManageMode) {
       return;
     }
 
@@ -240,12 +248,10 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
           return;
         }
 
-        setReminderSettings((currentSettings) => ({
-          ...currentSettings,
-          emailReminderEnabled:
-            payload.settings?.emailReminderEnabled ??
-            currentSettings.emailReminderEnabled
-        }));
+        const nextSettings = apiSettingsToReminderSettings(payload.settings);
+
+        setAppliedReminderSettings(nextSettings);
+        setDraftReminderSettings(nextSettings);
       } catch (settingsError) {
         if (isCurrent) {
           setError(getErrorMessage(settingsError));
@@ -262,7 +268,7 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
     return () => {
       isCurrent = false;
     };
-  }, [activeAction, isManageMode]);
+  }, [isManageMode]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -284,12 +290,17 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
     };
   }, []);
 
+  const reminderThresholds = useMemo(
+    () => toReminderThresholds(appliedReminderSettings),
+    [appliedReminderSettings]
+  );
+
   const visibleTasks = useMemo(() => {
     return tasks
-      .map((task) => toTaskView(task, now))
+      .map((task) => toTaskView(task, now, reminderThresholds))
       .filter((task) => isManageMode || task.status !== "ARCHIVED")
       .sort(compareTaskViews);
-  }, [isManageMode, now, tasks]);
+  }, [isManageMode, now, reminderThresholds, tasks]);
 
   const stats = useMemo(() => {
     return {
@@ -306,6 +317,10 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
   }, [visibleTasks]);
   const hasVisibleTasks = visibleTasks.length > 0;
   const shouldShowTaskList = isLoading || hasVisibleTasks;
+  const settingsHaveChanges = !settingsAreEqual(
+    appliedReminderSettings,
+    draftReminderSettings
+  );
 
   useEffect(() => {
     const taskId = pendingFocusTaskId.current;
@@ -470,13 +485,11 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
     resetForm();
   }
 
-  async function updateEmailReminderEnabled(nextEnabled: boolean) {
-    const previousEnabled = reminderSettings.emailReminderEnabled;
+  async function saveReminderSettings() {
+    if (!settingsHaveChanges) {
+      return;
+    }
 
-    setReminderSettings((currentSettings) => ({
-      ...currentSettings,
-      emailReminderEnabled: nextEnabled
-    }));
     setIsSettingsSaving(true);
     setError(null);
 
@@ -487,7 +500,13 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          emailReminderEnabled: nextEnabled
+          emailReminderEnabled: draftReminderSettings.emailReminderEnabled,
+          approachingReminderMinutes: durationToMinutes(
+            draftReminderSettings.approachingDuration
+          ),
+          urgentReminderMinutes: durationToMinutes(
+            draftReminderSettings.deadlineDuration
+          )
         })
       });
       const payload = await parseSettingsResponse(response);
@@ -501,16 +520,11 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
         throw new Error(getSettingsApiError(payload));
       }
 
-      setReminderSettings((currentSettings) => ({
-        ...currentSettings,
-        emailReminderEnabled:
-          payload.settings?.emailReminderEnabled ?? nextEnabled
-      }));
+      const nextSettings = apiSettingsToReminderSettings(payload.settings);
+
+      setAppliedReminderSettings(nextSettings);
+      setDraftReminderSettings(nextSettings);
     } catch (settingsError) {
-      setReminderSettings((currentSettings) => ({
-        ...currentSettings,
-        emailReminderEnabled: previousEnabled
-      }));
       setError(getErrorMessage(settingsError));
     } finally {
       setIsSettingsSaving(false);
@@ -620,12 +634,15 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
             <section className="grid gap-6 xl:grid-cols-2">
               <section className="min-w-0">
                 <SettingsPanel
+                  hasChanges={settingsHaveChanges}
                   isEmailReminderPending={isSettingsLoading || isSettingsSaving}
-                  settings={reminderSettings}
-                  onEmailReminderChange={(nextEnabled) =>
-                    void updateEmailReminderEnabled(nextEnabled)
+                  isSaving={isSettingsSaving}
+                  settings={draftReminderSettings}
+                  onCancel={() =>
+                    setDraftReminderSettings(appliedReminderSettings)
                   }
-                  onChange={setReminderSettings}
+                  onChange={setDraftReminderSettings}
+                  onSave={() => void saveReminderSettings()}
                 />
               </section>
             </section>
@@ -806,7 +823,7 @@ function StatsSection({
       />
       <StatBlock
         cardClass="border-[#ff0000] bg-[#ff0000]"
-        label="即将截止"
+        label="紧急任务"
         labelClass="text-white"
         value={stats.urgent}
         valueClass="text-white"
@@ -1062,22 +1079,52 @@ function SidebarIcon({
 }
 
 function SettingsPanel({
+  hasChanges,
   isEmailReminderPending,
-  onEmailReminderChange,
+  isSaving,
+  onCancel,
   onChange,
+  onSave,
   settings
 }: {
+  hasChanges: boolean;
   isEmailReminderPending: boolean;
-  onEmailReminderChange: (enabled: boolean) => void;
+  isSaving: boolean;
+  onCancel: () => void;
   onChange: (
     update: (currentSettings: ReminderSettings) => ReminderSettings
   ) => void;
+  onSave: () => void;
   settings: ReminderSettings;
 }) {
   return (
     <section className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-5">
       <div className="mb-2 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">设置</h1>
+        <div className="flex items-center gap-2">
+          {hasChanges ? (
+            <button
+              className="h-10 rounded-md bg-rose-500 px-4 text-sm font-semibold text-white transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isSaving}
+              onClick={onCancel}
+              type="button"
+            >
+              取消变更
+            </button>
+          ) : null}
+          <button
+            className={`h-10 rounded-md px-4 text-sm font-semibold transition disabled:cursor-not-allowed ${
+              hasChanges
+                ? "bg-[#4bae50] text-white hover:bg-[#449b48]"
+                : "bg-[var(--muted)] text-[var(--muted-foreground)]"
+            }`}
+            disabled={!hasChanges || isSaving}
+            onClick={onSave}
+            type="button"
+          >
+            {isSaving ? "保存中..." : "变更设置"}
+          </button>
+        </div>
       </div>
 
       <div className="divide-y divide-[var(--border)]">
@@ -1093,7 +1140,10 @@ function SettingsPanel({
             } disabled:cursor-not-allowed disabled:opacity-60`}
             disabled={isEmailReminderPending}
             onClick={() =>
-              onEmailReminderChange(!settings.emailReminderEnabled)
+              onChange((currentSettings) => ({
+                ...currentSettings,
+                emailReminderEnabled: !currentSettings.emailReminderEnabled
+              }))
             }
             role="switch"
             type="button"
@@ -1120,7 +1170,7 @@ function SettingsPanel({
             }
           />
           <SettingsDurationInput
-            label="截止时间"
+            label="紧急时间"
             value={settings.deadlineDuration}
             onChange={(nextDuration) =>
               onChange((currentSettings) => ({
@@ -1631,7 +1681,11 @@ function TaskActionButton({
   );
 }
 
-function toTaskView(task: TaskDto, now: Date): TaskView {
+function toTaskView(
+  task: TaskDto,
+  now: Date,
+  reminderThresholds: ReminderThresholds
+): TaskView {
   const status = toTaskStatus(task.status);
   const hasDeadline = Boolean(task.startAt && task.dueAt);
   const startDate = task.startAt ? new Date(task.startAt) : null;
@@ -1641,7 +1695,9 @@ function toTaskView(task: TaskDto, now: Date): TaskView {
       ? getDeadlineStatus({
           taskStatus: status,
           dueAt: dueDate,
-          now
+          now,
+          approachingThresholdMs: reminderThresholds.approachingThresholdMs,
+          urgentThresholdMs: reminderThresholds.urgentThresholdMs
         })
       : getTaskStatusWithoutDeadline(status);
 
@@ -1834,6 +1890,50 @@ function msToDuration(totalMs: number): DurationValue {
     hours: clampDurationUnit(hours, 23),
     minutes: clampDurationUnit(minutes, 59)
   };
+}
+
+function minutesToDuration(totalMinutes: number): DurationValue {
+  return msToDuration(totalMinutes * MINUTE_MS);
+}
+
+function durationToMinutes(duration: DurationValue) {
+  return duration.days * 24 * 60 + duration.hours * 60 + duration.minutes;
+}
+
+function toReminderThresholds(settings: ReminderSettings): ReminderThresholds {
+  return {
+    approachingThresholdMs:
+      durationToMinutes(settings.approachingDuration) * MINUTE_MS,
+    urgentThresholdMs: durationToMinutes(settings.deadlineDuration) * MINUTE_MS
+  };
+}
+
+function apiSettingsToReminderSettings(
+  settings: SettingsApiResponse["settings"]
+): ReminderSettings {
+  return {
+    emailReminderEnabled:
+      settings?.emailReminderEnabled ??
+      DEFAULT_REMINDER_SETTINGS.emailReminderEnabled,
+    approachingDuration: minutesToDuration(
+      settings?.approachingReminderMinutes ??
+        durationToMinutes(DEFAULT_REMINDER_SETTINGS.approachingDuration)
+    ),
+    deadlineDuration: minutesToDuration(
+      settings?.urgentReminderMinutes ??
+        durationToMinutes(DEFAULT_REMINDER_SETTINGS.deadlineDuration)
+    )
+  };
+}
+
+function settingsAreEqual(left: ReminderSettings, right: ReminderSettings) {
+  return (
+    left.emailReminderEnabled === right.emailReminderEnabled &&
+    durationToMinutes(left.approachingDuration) ===
+      durationToMinutes(right.approachingDuration) &&
+    durationToMinutes(left.deadlineDuration) ===
+      durationToMinutes(right.deadlineDuration)
+  );
 }
 
 function clampDurationUnit(value: number, max: number) {

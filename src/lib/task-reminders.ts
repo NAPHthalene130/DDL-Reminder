@@ -16,8 +16,14 @@ type TaskReminderClient = {
       };
       select: {
         emailReminderEnabled: true;
+        approachingReminderMinutes: true;
+        urgentReminderMinutes: true;
       };
-    }) => Promise<{ emailReminderEnabled: boolean } | null>;
+    }) => Promise<{
+      emailReminderEnabled: boolean;
+      approachingReminderMinutes: number;
+      urgentReminderMinutes: number;
+    } | null>;
   };
   task: {
     findMany: (args: {
@@ -81,11 +87,13 @@ type ReminderTask = {
 };
 
 type PendingReminderInput = {
+  approachingThresholdMs?: number;
   createdAt: Date;
   dueAt: Date | null;
   now?: Date;
   sentReminderTypes: Iterable<string>;
   status: string;
+  urgentThresholdMs?: number;
 };
 
 export async function sendDueTaskRemindersForUser({
@@ -102,13 +110,18 @@ export async function sendDueTaskRemindersForUser({
       id: userId
     },
     select: {
-      emailReminderEnabled: true
+      emailReminderEnabled: true,
+      approachingReminderMinutes: true,
+      urgentReminderMinutes: true
     }
   });
 
   if (!user?.emailReminderEnabled) {
     return;
   }
+
+  const approachingThresholdMs = user.approachingReminderMinutes * 60 * 1000;
+  const urgentThresholdMs = user.urgentReminderMinutes * 60 * 1000;
 
   const tasks = (await prisma.task.findMany({
     where: {
@@ -140,11 +153,13 @@ export async function sendDueTaskRemindersForUser({
 
   for (const task of tasks) {
     const reminderType = getPendingDeadlineReminderType({
+      approachingThresholdMs,
       createdAt: task.createdAt,
       dueAt: task.dueAt,
       now,
       sentReminderTypes: task.reminderLogs.map((log) => log.reminderType),
-      status: task.status
+      status: task.status,
+      urgentThresholdMs
     });
 
     if (!reminderType || !task.dueAt) {
@@ -180,11 +195,13 @@ export async function sendDueTaskRemindersForUser({
 }
 
 export function getPendingDeadlineReminderType({
+  approachingThresholdMs = DEFAULT_APPROACHING_THRESHOLD_MS,
   createdAt,
   dueAt,
   now = new Date(),
   sentReminderTypes,
-  status
+  status,
+  urgentThresholdMs = DEFAULT_URGENT_THRESHOLD_MS
 }: PendingReminderInput): ReminderTypeValue | null {
   if (status !== "ACTIVE" || !dueAt) {
     return null;
@@ -202,17 +219,17 @@ export function getPendingDeadlineReminderType({
   ) as ReminderTypeLike[];
 
   if (
-    remainingMs < DEFAULT_URGENT_THRESHOLD_MS &&
-    initialRemainingMs >= DEFAULT_URGENT_THRESHOLD_MS &&
+    remainingMs < urgentThresholdMs &&
+    initialRemainingMs >= urgentThresholdMs &&
     shouldSendReminder(normalizedSentReminderTypes, "DUE_IN_2H")
   ) {
     return "DUE_IN_2H";
   }
 
   if (
-    remainingMs < DEFAULT_APPROACHING_THRESHOLD_MS &&
-    remainingMs >= DEFAULT_URGENT_THRESHOLD_MS &&
-    initialRemainingMs >= DEFAULT_APPROACHING_THRESHOLD_MS &&
+    remainingMs < approachingThresholdMs &&
+    remainingMs >= urgentThresholdMs &&
+    initialRemainingMs >= approachingThresholdMs &&
     shouldSendReminder(normalizedSentReminderTypes, "DUE_IN_48H")
   ) {
     return "DUE_IN_48H";
