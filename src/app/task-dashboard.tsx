@@ -1348,7 +1348,7 @@ function SettingsDurationInput({
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <DurationWheelColumn
           max={14}
           onChange={(nextValue) => updateUnit("days", nextValue)}
@@ -1473,14 +1473,14 @@ function DurationWheelColumn({
   }
 
   return (
-    <div className="relative h-36 overflow-hidden rounded-md border border-[var(--border)] bg-[var(--field)]">
-      <div className="pointer-events-none absolute inset-x-2 top-1/2 z-10 h-12 -translate-y-1/2 rounded-md bg-[var(--muted)]" />
-      <span className="pointer-events-none absolute right-5 top-1/2 z-40 -translate-y-1/2 text-base font-semibold text-[var(--foreground)]">
+    <div className="relative h-32 overflow-hidden rounded-md border border-[var(--border)] bg-[var(--field)] sm:h-36">
+      <div className="pointer-events-none absolute inset-x-1 top-1/2 z-10 h-12 -translate-y-1/2 rounded-md bg-[var(--muted)] sm:inset-x-2" />
+      <span className="pointer-events-none absolute right-2 top-1/2 z-40 -translate-y-1/2 text-sm font-semibold text-[var(--foreground)] sm:right-5 sm:text-base">
         {unitLabel}
       </span>
       <div className="pointer-events-none absolute inset-0 z-30 bg-[linear-gradient(to_bottom,var(--field)_0%,transparent_30%,transparent_70%,var(--field)_100%)]" />
       <div
-        className="relative z-20 h-full snap-y snap-mandatory overflow-y-auto py-11 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="relative z-20 h-full snap-y snap-mandatory overflow-y-auto py-10 [scrollbar-width:none] sm:py-11 [&::-webkit-scrollbar]:hidden"
         onScroll={handleScroll}
         ref={scrollRef}
       >
@@ -1489,9 +1489,9 @@ function DurationWheelColumn({
 
           return (
             <button
-              className={`flex h-12 w-full snap-center items-center justify-center pr-12 text-3xl font-semibold transition ${
+              className={`flex h-12 w-full snap-center items-center justify-center pr-8 text-xl font-semibold transition sm:pr-12 sm:text-3xl ${
                 isSelected
-                  ? "text-5xl text-[var(--foreground)]"
+                  ? "text-3xl text-[var(--foreground)] sm:text-5xl"
                   : "text-[var(--muted-foreground)] opacity-55"
               }`}
               data-wheel-value={option}
