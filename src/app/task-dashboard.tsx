@@ -124,6 +124,33 @@ const EDIT_ACTIONS: Array<{
   }
 ];
 
+const MOBILE_NAV_ACTIONS: Array<{
+  id: WorkspaceAction;
+  icon: SidebarIconName;
+  label: string;
+}> = [
+  {
+    id: "view",
+    icon: "view",
+    label: "查看"
+  },
+  {
+    id: "add",
+    icon: "add",
+    label: "添加"
+  },
+  {
+    id: "edit",
+    icon: "edit",
+    label: "编辑"
+  },
+  {
+    id: "settings",
+    icon: "settings",
+    label: "设置"
+  }
+];
+
 const PROGRESS_START_COLOR = "#4bae50";
 const PROGRESS_MID_COLOR = "#f5c84c";
 const PROGRESS_END_COLOR = "#ff0000";
@@ -549,7 +576,7 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
     <div className="flex h-full min-h-0 overflow-hidden">
       <TaskSidebar activeAction={activeAction} onSwitch={switchAction} />
 
-      <section className="min-w-0 flex-1 overflow-y-auto px-5 py-6 sm:px-6 lg:px-8">
+      <section className="min-w-0 flex-1 overflow-y-auto px-5 py-6 pb-24 sm:px-6 md:pb-6 lg:px-8">
         <div className="mx-auto flex max-w-6xl flex-col gap-8">
           <StatsSection stats={stats} />
 
@@ -655,6 +682,8 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
           ) : null}
         </div>
       </section>
+
+      <MobileTaskNav activeAction={activeAction} onSwitch={switchAction} />
     </div>
   );
 }
@@ -852,7 +881,7 @@ function TaskSidebar({
 
   return (
     <aside
-      className={`h-full shrink-0 overflow-y-auto border-r border-[var(--border)] bg-[#171918] py-5 transition-[width,padding] duration-300 ease-in-out ${
+      className={`hidden h-full shrink-0 overflow-y-auto border-r border-[var(--border)] bg-[#171918] py-5 transition-[width,padding] duration-300 ease-in-out md:block ${
         isCollapsed ? "w-20 px-3" : "w-72 px-4"
       }`}
     >
@@ -949,6 +978,43 @@ function TaskSidebar({
         />
       </div>
     </aside>
+  );
+}
+
+function MobileTaskNav({
+  activeAction,
+  onSwitch
+}: {
+  activeAction: WorkspaceAction;
+  onSwitch: (action: WorkspaceAction) => void;
+}) {
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--border)] bg-[var(--background)]/95 px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur md:hidden">
+      <div className="grid grid-cols-4 gap-2">
+        {MOBILE_NAV_ACTIONS.map((action) => {
+          const isActive = activeAction === action.id;
+
+          return (
+            <button
+              aria-current={isActive ? "page" : undefined}
+              aria-label={action.label}
+              className={`flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-md border text-xs font-semibold transition ${
+                isActive
+                  ? "border-[var(--primary)] bg-[#263245] text-[var(--primary)]"
+                  : "border-transparent text-[var(--muted-foreground)] active:bg-[var(--muted)]"
+              }`}
+              key={action.id}
+              onClick={() => onSwitch(action.id)}
+              title={action.label}
+              type="button"
+            >
+              <SidebarIcon name={action.icon} />
+              <span className="max-w-full truncate">{action.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
 

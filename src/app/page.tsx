@@ -10,7 +10,7 @@ export default async function Home() {
   }
 
   return (
-    <main className="h-[calc(100vh-4rem)] overflow-hidden">
+    <main className="h-[calc(100dvh-4rem)] overflow-hidden">
       <TaskDashboard mode="manage" />
     </main>
   );
