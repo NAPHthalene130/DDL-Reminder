@@ -90,6 +90,7 @@ type SidebarIconName =
   | "collapse"
   | "edit"
   | "group"
+  | "menu"
   | "settings"
   | "view";
 
@@ -121,33 +122,6 @@ const EDIT_ACTIONS: Array<{
     id: "edit",
     icon: "edit",
     label: "编辑任务"
-  }
-];
-
-const MOBILE_NAV_ACTIONS: Array<{
-  id: WorkspaceAction;
-  icon: SidebarIconName;
-  label: string;
-}> = [
-  {
-    id: "view",
-    icon: "view",
-    label: "查看"
-  },
-  {
-    id: "add",
-    icon: "add",
-    label: "添加"
-  },
-  {
-    id: "edit",
-    icon: "edit",
-    label: "编辑"
-  },
-  {
-    id: "settings",
-    icon: "settings",
-    label: "设置"
   }
 ];
 
@@ -576,7 +550,7 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
     <div className="flex h-full min-h-0 overflow-hidden">
       <TaskSidebar activeAction={activeAction} onSwitch={switchAction} />
 
-      <section className="min-w-0 flex-1 overflow-y-auto px-5 py-6 pb-24 sm:px-6 md:pb-6 lg:px-8">
+      <section className="min-w-0 flex-1 overflow-y-auto py-6 pl-20 pr-5 sm:pr-6 md:px-6 lg:px-8">
         <div className="mx-auto flex max-w-6xl flex-col gap-8">
           <StatsSection stats={stats} />
 
@@ -683,7 +657,7 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
         </div>
       </section>
 
-      <MobileTaskNav activeAction={activeAction} onSwitch={switchAction} />
+      <MobileTaskDrawer activeAction={activeAction} onSwitch={switchAction} />
     </div>
   );
 }
@@ -981,40 +955,128 @@ function TaskSidebar({
   );
 }
 
-function MobileTaskNav({
+function MobileTaskDrawer({
   activeAction,
   onSwitch
 }: {
   activeAction: WorkspaceAction;
   onSwitch: (action: WorkspaceAction) => void;
 }) {
-  return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--border)] bg-[var(--background)]/95 px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur md:hidden">
-      <div className="grid grid-cols-4 gap-2">
-        {MOBILE_NAV_ACTIONS.map((action) => {
-          const isActive = activeAction === action.id;
+  const [isOpen, setIsOpen] = useState(false);
+  const [isEditGroupExpanded, setIsEditGroupExpanded] = useState(true);
+  const editGroupIsActive = activeAction === "add" || activeAction === "edit";
 
-          return (
+  function switchAndClose(action: WorkspaceAction) {
+    onSwitch(action);
+    setIsOpen(false);
+  }
+
+  return (
+    <>
+      {isOpen ? (
+        <button
+          aria-label="关闭侧边导航栏"
+          className="fixed inset-x-0 bottom-0 top-16 z-20 bg-black/45 md:hidden"
+          onClick={() => setIsOpen(false)}
+          type="button"
+        />
+      ) : null}
+
+      <aside
+        className={`fixed bottom-0 left-0 top-16 z-30 overflow-y-auto border-r border-[var(--border)] bg-[#171918] py-5 transition-[width,padding] duration-300 ease-in-out md:hidden ${
+          isOpen ? "w-72 px-4" : "w-16 px-3"
+        }`}
+      >
+        <div
+          className={`mb-4 flex ${isOpen ? "justify-end" : "justify-center"}`}
+        >
+          <button
+            aria-expanded={isOpen}
+            aria-label={isOpen ? "收起侧边导航栏" : "展开侧边导航栏"}
+            className="inline-flex size-10 items-center justify-center rounded-md border border-[var(--border)] text-[var(--muted-foreground)] transition hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+            onClick={() => setIsOpen((currentValue) => !currentValue)}
+            title={isOpen ? "收起侧边导航栏" : "展开侧边导航栏"}
+            type="button"
+          >
+            <SidebarIcon name={isOpen ? "collapse" : "menu"} />
+          </button>
+        </div>
+
+        <nav
+          className={`flex flex-col gap-2 transition-opacity duration-200 ${
+            isOpen ? "opacity-100" : "pointer-events-none opacity-0"
+          }`}
+        >
+          <TreeButton
+            active={activeAction === "view"}
+            collapsed={false}
+            icon="view"
+            label="查看任务"
+            onClick={() => switchAndClose("view")}
+          />
+
+          <div className="mt-2">
             <button
-              aria-current={isActive ? "page" : undefined}
-              aria-label={action.label}
-              className={`flex h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-md border text-xs font-semibold transition ${
-                isActive
+              aria-expanded={isEditGroupExpanded}
+              aria-label="任务编辑"
+              className={`flex w-full items-center gap-3 overflow-hidden rounded-md border px-3 py-3 text-left text-sm font-semibold transition ${
+                editGroupIsActive
                   ? "border-[var(--primary)] bg-[#263245] text-[var(--primary)]"
-                  : "border-transparent text-[var(--muted-foreground)] active:bg-[var(--muted)]"
+                  : "border-transparent text-[var(--primary)] hover:bg-[var(--muted)]"
               }`}
-              key={action.id}
-              onClick={() => onSwitch(action.id)}
-              title={action.label}
+              onClick={() =>
+                setIsEditGroupExpanded((isExpanded) => !isExpanded)
+              }
+              title="任务编辑"
               type="button"
             >
-              <SidebarIcon name={action.icon} />
-              <span className="max-w-full truncate">{action.label}</span>
+              <SidebarIcon name="group" />
+              <span className="min-w-0 flex-1 overflow-hidden whitespace-nowrap">
+                任务编辑
+              </span>
+              <ChevronIcon
+                className={`transition-transform duration-300 ${
+                  isEditGroupExpanded ? "rotate-180" : "rotate-0"
+                }`}
+              />
             </button>
-          );
-        })}
-      </div>
-    </nav>
+
+            <div
+              className={`grid overflow-hidden pl-6 transition-[grid-template-rows,opacity,transform,padding] duration-300 ease-in-out ${
+                isEditGroupExpanded
+                  ? "grid-rows-[1fr] opacity-100 translate-y-0"
+                  : "grid-rows-[0fr] opacity-0 -translate-y-1"
+              }`}
+            >
+              <div className="min-h-0">
+                <div className="mt-1 flex flex-col gap-1">
+                  {EDIT_ACTIONS.map((action) => (
+                    <TreeButton
+                      active={activeAction === action.id}
+                      collapsed={false}
+                      icon={action.icon}
+                      key={action.id}
+                      label={action.label}
+                      onClick={() => switchAndClose(action.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 border-t border-[var(--border)] pt-4">
+            <TreeButton
+              active={activeAction === "settings"}
+              collapsed={false}
+              icon="settings"
+              label="设置"
+              onClick={() => switchAndClose("settings")}
+            />
+          </div>
+        </nav>
+      </aside>
+    </>
   );
 }
 
@@ -1106,6 +1168,16 @@ function SidebarIcon({
         <path d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
         <path d="M8 9h8" />
         <path d="M8 15h5" />
+      </svg>
+    );
+  }
+
+  if (name === "menu") {
+    return (
+      <svg {...commonProps}>
+        <path d="M4 6h16" />
+        <path d="M4 12h16" />
+        <path d="M4 18h16" />
       </svg>
     );
   }
