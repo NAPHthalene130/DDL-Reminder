@@ -14,6 +14,7 @@ import {
   MINUTE_MS
 } from "@/lib/deadline";
 import { TaskStatusValue } from "@/lib/task-constants";
+import CalendarView from "./calendar-view";
 
 type TaskDto = {
   id: string;
@@ -84,9 +85,10 @@ type SettingsApiResponse = {
   }>;
 };
 
-type WorkspaceAction = "view" | "add" | "edit" | "settings";
+type WorkspaceAction = "view" | "add" | "edit" | "settings" | "calendar";
 type SidebarIconName =
   | "add"
+  | "calendar"
   | "collapse"
   | "edit"
   | "group"
@@ -122,6 +124,23 @@ const EDIT_ACTIONS: Array<{
     id: "edit",
     icon: "edit",
     label: "编辑任务"
+  }
+];
+
+const VIEW_ACTIONS: Array<{
+  id: Extract<WorkspaceAction, "view" | "calendar">;
+  icon: SidebarIconName;
+  label: string;
+}> = [
+  {
+    id: "view",
+    icon: "view",
+    label: "任务列表"
+  },
+  {
+    id: "calendar",
+    icon: "calendar",
+    label: "任务日历"
   }
 ];
 
@@ -649,6 +668,20 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
             </section>
           ) : null}
 
+          {activeAction === "calendar" ? (
+            <CalendarView
+              tasks={visibleTasks.map((t) => ({
+                id: t.id,
+                title: t.title,
+                status: t.status,
+                startDate: t.startDate,
+                dueDate: t.dueDate,
+                deadlineStatus: t.deadlineStatus,
+                hasDeadline: t.hasDeadline
+              }))}
+            />
+          ) : null}
+
           {error ? (
             <p className="rounded-md border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm font-medium text-rose-200">
               {error}
@@ -849,8 +882,10 @@ function TaskSidebar({
   activeAction: WorkspaceAction;
   onSwitch: (action: WorkspaceAction) => void;
 }) {
+  const [isViewGroupExpanded, setIsViewGroupExpanded] = useState(true);
   const [isEditGroupExpanded, setIsEditGroupExpanded] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const viewGroupIsActive = activeAction === "view" || activeAction === "calendar";
   const editGroupIsActive = activeAction === "add" || activeAction === "edit";
 
   return (
@@ -881,13 +916,57 @@ function TaskSidebar({
       </div>
 
       <nav className="flex flex-col gap-2">
-        <TreeButton
-          active={activeAction === "view"}
-          icon="view"
-          label="查看任务"
-          collapsed={isCollapsed}
-          onClick={() => onSwitch("view")}
-        />
+        <div>
+          <button
+            aria-expanded={isViewGroupExpanded}
+            aria-label="查看任务"
+            className={`flex w-full items-center overflow-hidden rounded-md border px-3 py-3 text-left text-sm font-semibold transition ${
+              viewGroupIsActive
+                ? "border-[var(--primary)] bg-[#263245] text-[var(--primary)]"
+                : "border-transparent text-[var(--primary)] hover:bg-[var(--muted)]"
+            } ${isCollapsed ? "justify-center gap-0" : "gap-3"}`}
+            onClick={() => setIsViewGroupExpanded((isExpanded) => !isExpanded)}
+            title="查看任务"
+            type="button"
+          >
+            <SidebarIcon name="view" />
+            <span
+              className={`min-w-0 overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ${
+                isCollapsed ? "max-w-0 opacity-0" : "max-w-32 opacity-100"
+              }`}
+            >
+              查看任务
+            </span>
+            <ChevronIcon
+              className={`transition-[max-width,opacity,transform] duration-300 ${
+                isViewGroupExpanded ? "rotate-180" : "rotate-0"
+              } ${isCollapsed ? "max-w-0 opacity-0" : "max-w-5 opacity-100"}`}
+            />
+          </button>
+
+          <div
+            className={`grid overflow-hidden transition-[grid-template-rows,opacity,transform,padding] duration-300 ease-in-out ${
+              isViewGroupExpanded
+                ? "grid-rows-[1fr] opacity-100 translate-y-0"
+                : "grid-rows-[0fr] opacity-0 -translate-y-1"
+            } ${isCollapsed ? "pl-0" : "pl-6"}`}
+          >
+            <div className="min-h-0">
+              <div className="mt-1 flex flex-col gap-1">
+                {VIEW_ACTIONS.map((action) => (
+                  <TreeButton
+                    active={activeAction === action.id}
+                    collapsed={isCollapsed}
+                    icon={action.icon}
+                    key={action.id}
+                    label={action.label}
+                    onClick={() => onSwitch(action.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="mt-2">
           <button
@@ -963,7 +1042,9 @@ function MobileTaskDrawer({
   onSwitch: (action: WorkspaceAction) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isViewGroupExpanded, setIsViewGroupExpanded] = useState(true);
   const [isEditGroupExpanded, setIsEditGroupExpanded] = useState(true);
+  const viewGroupIsActive = activeAction === "view" || activeAction === "calendar";
   const editGroupIsActive = activeAction === "add" || activeAction === "edit";
 
   function switchAndClose(action: WorkspaceAction) {
@@ -1007,13 +1088,55 @@ function MobileTaskDrawer({
             isOpen ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
-          <TreeButton
-            active={activeAction === "view"}
-            collapsed={false}
-            icon="view"
-            label="查看任务"
-            onClick={() => switchAndClose("view")}
-          />
+          <div>
+            <button
+              aria-expanded={isViewGroupExpanded}
+              aria-label="查看任务"
+              className={`flex w-full items-center gap-3 overflow-hidden rounded-md border px-3 py-3 text-left text-sm font-semibold transition ${
+                viewGroupIsActive
+                  ? "border-[var(--primary)] bg-[#263245] text-[var(--primary)]"
+                  : "border-transparent text-[var(--primary)] hover:bg-[var(--muted)]"
+              }`}
+              onClick={() =>
+                setIsViewGroupExpanded((isExpanded) => !isExpanded)
+              }
+              title="查看任务"
+              type="button"
+            >
+              <SidebarIcon name="view" />
+              <span className="min-w-0 flex-1 overflow-hidden whitespace-nowrap">
+                查看任务
+              </span>
+              <ChevronIcon
+                className={`transition-transform duration-300 ${
+                  isViewGroupExpanded ? "rotate-180" : "rotate-0"
+                }`}
+              />
+            </button>
+
+            <div
+              className={`grid overflow-hidden pl-6 transition-[grid-template-rows,opacity,transform,padding] duration-300 ease-in-out ${
+                isViewGroupExpanded
+                  ? "grid-rows-[1fr] opacity-100 translate-y-0"
+                  : "grid-rows-[0fr] opacity-0 -translate-y-1"
+              }`}
+            >
+              <div className="min-h-0">
+                <div className="mt-1 flex flex-col gap-1">
+                  {VIEW_ACTIONS.map((action) => (
+                    <TreeButton
+                      active={activeAction === action.id}
+                      collapsed={false}
+                      icon={action.icon}
+                      key={action.id}
+                      label={action.label}
+                      onClick={() => switchAndClose(action.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div className="mt-2">
             <button
@@ -1187,6 +1310,20 @@ function SidebarIcon({
       <svg {...commonProps}>
         <path d="M12 5v14" />
         <path d="M5 12h14" />
+      </svg>
+    );
+  }
+
+  if (name === "calendar") {
+    return (
+      <svg {...commonProps}>
+        <rect height="18" rx="2" ry="2" width="18" x="3" y="4" />
+        <path d="M16 2v4" />
+        <path d="M8 2v4" />
+        <path d="M3 10h18" />
+        <path d="M8 14h.01" />
+        <path d="M12 14h.01" />
+        <path d="M16 14h.01" />
       </svg>
     );
   }
