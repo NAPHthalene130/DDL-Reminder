@@ -1679,9 +1679,9 @@ function TaskCard({
       <div className="mt-5">
         {task.hasDeadline && task.startDate && task.dueDate ? (
           <div className="mb-3 grid gap-3 text-sm sm:grid-cols-3">
-            <InfoPill label="开始" value={formatDateTime(task.startDate)} />
-            <InfoPill label="剩余" value={task.remainingText} />
-            <InfoPill label="DDL" value={formatDateTime(task.dueDate)} />
+            <InfoPill label="添加时间" value={formatDateTime(task.startDate)} />
+            <InfoPill label="剩余时间" value={task.remainingText} />
+            <InfoPill label="截止时间" value={formatDateTime(task.dueDate)} />
           </div>
         ) : (
           <div className="text-sm">
