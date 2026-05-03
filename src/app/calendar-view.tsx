@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { DeadlineStatus } from "@/lib/deadline";
 
 const WEEKDAY_LABELS = ["一", "二", "三", "四", "五", "六", "日"];
@@ -8,6 +8,15 @@ const HOUR_MS = 60 * 60 * 1000;
 const TIMELINE_HOURS = 72;
 const TIMELINE_HALF = TIMELINE_HOURS / 2;
 const TIMELINE_STEP_HOURS = 3;
+
+const STATUS_LABELS: Record<DeadlineStatus, string> = {
+  normal: "正常",
+  approaching: "临近",
+  urgent: "紧急",
+  overdue: "已逾期",
+  completed: "已完成",
+  archived: "已归档"
+};
 
 type CalendarTask = {
   id: string;
@@ -37,6 +46,9 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
   const [centerMonth, setCenterMonth] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1)
   );
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
 
   const prevMonth = new Date(
     centerMonth.getFullYear(),
@@ -84,6 +96,11 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
     return { now, start, end, tasks: inRange };
   }, [tasks, today]);
 
+  const selectedDayTasks = useMemo(() => {
+    if (!selectedDay) return [];
+    return tasksByDay.get(selectedDay) ?? [];
+  }, [selectedDay, tasksByDay]);
+
   function handleMonthClick(monthKey: string) {
     if (monthKey === "prev") {
       setCenterMonth(
@@ -94,6 +111,15 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
         new Date(centerMonth.getFullYear(), centerMonth.getMonth() + 1, 1)
       );
     }
+  }
+
+  const handleDayClick = useCallback((cellKey: string) => {
+    setSelectedDay((prev) => (prev === cellKey ? null : cellKey));
+  }, []);
+
+  function jumpToYearMonth(year: number, month: number) {
+    setCenterMonth(new Date(year, month, 1));
+    setPickerOpen(false);
   }
 
   const positionStyles: Record<string, { transform: string; transformOrigin: string; zIndex: number; opacity: number }> = {
@@ -120,7 +146,43 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
   return (
     <section className="flex flex-col gap-8">
       <section>
-        <h2 className="mb-5 text-xl font-bold tracking-wide">任务总览</h2>
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold tracking-wide">任务总览</h2>
+            <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">
+              按截止时间排列
+            </p>
+          </div>
+          <div className="relative" ref={pickerRef}>
+            <button
+              aria-expanded={pickerOpen}
+              aria-label="选择年月"
+              className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:border-[var(--primary)]"
+              onClick={() => setPickerOpen((v) => !v)}
+              title="选择年月"
+              type="button"
+            >
+              <svg aria-hidden="true" className="size-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+                <rect height="18" rx="2" ry="2" width="18" x="3" y="4" />
+                <path d="M16 2v4" />
+                <path d="M8 2v4" />
+                <path d="M3 10h18" />
+              </svg>
+              {formatYearMonth(centerMonth)}
+              <svg aria-hidden="true" className={`size-3.5 transition-transform ${pickerOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+
+            {pickerOpen ? (
+              <YearMonthPicker
+                centerMonth={centerMonth}
+                onSelect={jumpToYearMonth}
+              />
+            ) : null}
+          </div>
+        </div>
+
         <div
           className="relative h-0 overflow-visible"
           style={{ paddingBottom: "28%" }}
@@ -156,6 +218,8 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
                   <MonthGrid
                     isCenter={month.position === "center"}
                     monthDate={month.date}
+                    onDayClick={handleDayClick}
+                    selectedDay={selectedDay}
                     tasksByDay={tasksByDay}
                     today={today}
                   />
@@ -172,16 +236,7 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
             onClick={() => handleMonthClick("prev")}
             type="button"
           >
-            <svg
-              aria-hidden="true"
-              className="size-4"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
+            <svg aria-hidden="true" className="size-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
               <path d="m15 18-6-6 6-6" />
             </svg>
           </button>
@@ -194,20 +249,75 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
             onClick={() => handleMonthClick("next")}
             type="button"
           >
-            <svg
-              aria-hidden="true"
-              className="size-4"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
+            <svg aria-hidden="true" className="size-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
               <path d="m9 18 6-6-6-6" />
             </svg>
           </button>
         </div>
+
+        {selectedDay ? (
+          <div className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--panel)] p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-bold">
+                {formatDateChinese(selectedDay)} 的任务
+                <span className="ml-1.5 text-xs font-normal text-[var(--muted-foreground)]">
+                  ({selectedDayTasks.length} 个)
+                </span>
+              </h3>
+              <button
+                aria-label="关闭"
+                className="inline-flex size-6 items-center justify-center rounded text-[var(--muted-foreground)] transition hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+                onClick={() => setSelectedDay(null)}
+                type="button"
+              >
+                <svg aria-hidden="true" className="size-3.5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </button>
+            </div>
+            {selectedDayTasks.length === 0 ? (
+              <p className="py-2 text-center text-xs text-[var(--muted-foreground)]">
+                该日没有截止的任务
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {selectedDayTasks.map((task) => (
+                  <div
+                    className="flex items-center gap-3 rounded-md border border-[var(--border)] bg-[var(--field)] px-3 py-2.5"
+                    key={task.id}
+                  >
+                    <span
+                      className="block size-2 shrink-0 rounded-full"
+                      style={{
+                        backgroundColor: STATUS_COLORS[task.deadlineStatus]
+                      }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-medium">
+                        {task.title}
+                      </p>
+                      {task.dueDate ? (
+                        <p className="mt-0.5 truncate text-[10px] text-[var(--muted-foreground)]">
+                          截止 {formatDateTime(task.dueDate)}
+                        </p>
+                      ) : null}
+                    </div>
+                    <span
+                      className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
+                      style={{
+                        backgroundColor: STATUS_COLORS[task.deadlineStatus] + "20",
+                        color: STATUS_COLORS[task.deadlineStatus]
+                      }}
+                    >
+                      {STATUS_LABELS[task.deadlineStatus]}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
       </section>
 
       <section>
@@ -220,14 +330,78 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
   );
 }
 
+function YearMonthPicker({
+  centerMonth,
+  onSelect
+}: {
+  centerMonth: Date;
+  onSelect: (year: number, month: number) => void;
+}) {
+  const [viewYear, setViewYear] = useState(centerMonth.getFullYear());
+  const curYear = centerMonth.getFullYear();
+  const curMonth = centerMonth.getMonth();
+
+  return (
+    <div className="absolute right-0 top-full z-10 mt-1 w-64 rounded-lg border border-[var(--border)] bg-[var(--panel)] p-3 shadow-lg">
+      <div className="mb-2 flex items-center justify-between">
+        <button
+          aria-label="上一年"
+          className="inline-flex size-7 items-center justify-center rounded text-[var(--muted-foreground)] transition hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+          onClick={() => setViewYear((y) => y - 1)}
+          type="button"
+        >
+          <svg aria-hidden="true" className="size-3.5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </button>
+        <span className="text-sm font-bold">{viewYear}年</span>
+        <button
+          aria-label="下一年"
+          className="inline-flex size-7 items-center justify-center rounded text-[var(--muted-foreground)] transition hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+          onClick={() => setViewYear((y) => y + 1)}
+          type="button"
+        >
+          <svg aria-hidden="true" className="size-3.5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-4 gap-1">
+        {Array.from({ length: 12 }, (_, i) => {
+          const isCurrent = viewYear === curYear && i === curMonth;
+          return (
+            <button
+              className={`rounded py-2 text-xs font-medium transition ${
+                isCurrent
+                  ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
+                  : "text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+              }`}
+              key={i}
+              onClick={() => onSelect(viewYear, i)}
+              type="button"
+            >
+              {i + 1}月
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function MonthGrid({
   isCenter,
   monthDate,
+  onDayClick,
+  selectedDay,
   tasksByDay,
   today
 }: {
   isCenter: boolean;
   monthDate: Date;
+  onDayClick: (cellKey: string) => void;
+  selectedDay: string | null;
   tasksByDay: Map<string, CalendarTask[]>;
   today: Date;
 }) {
@@ -276,16 +450,21 @@ function MonthGrid({
           const cellKey = dateKey(cellDate);
           const dayTasks = tasksByDay.get(cellKey) ?? [];
           const isToday = cellKey === todayKey;
+          const isSelected = cellKey === selectedDay;
 
           return (
-            <div
-              className={`flex flex-col items-center gap-0.5 rounded py-1 text-xs ${
+            <button
+              className={`flex flex-col items-center gap-0.5 rounded py-1 text-xs transition ${
                 isToday
                   ? "bg-[var(--primary)] font-bold text-[var(--primary-foreground)]"
-                  : ""
-              }`}
+                  : isSelected
+                    ? "bg-[var(--muted)] font-semibold text-[var(--foreground)]"
+                    : "hover:bg-[var(--muted)]"
+              } ${isCenter ? "" : "pointer-events-none"}`}
               key={day}
+              onClick={() => onDayClick(cellKey)}
               role="gridcell"
+              type="button"
             >
               <span>{day}</span>
               {dayTasks.length > 0 ? (
@@ -301,7 +480,7 @@ function MonthGrid({
                   ))}
                 </div>
               ) : null}
-            </div>
+            </button>
           );
         })}
       </div>
@@ -466,6 +645,19 @@ function formatTimeShort(date: Date) {
   const hh = String(date.getHours()).padStart(2, "0");
   const mm = String(date.getMinutes()).padStart(2, "0");
   return `${m}-${d} ${hh}:${mm}`;
+}
+
+function formatDateTime(date: Date) {
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  return `${m}-${d} ${hh}:${mm}`;
+}
+
+function formatDateChinese(dateKey: string) {
+  const [y, m, d] = dateKey.split("-");
+  return `${y}年${Number(m)}月${Number(d)}日`;
 }
 
 function dateKey(date: Date) {
