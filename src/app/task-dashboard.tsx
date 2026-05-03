@@ -400,7 +400,7 @@ export function TaskDashboard({ mode }: { mode: "public" | "manage" }) {
 
     try {
       const isCreatingTask = editingTaskId === null;
-      const payload = formToPayload(form);
+      const payload = formToPayload(form, isCreatingTask);
       const endpoint = editingTaskId
         ? `/api/tasks/${editingTaskId}`
         : "/api/tasks";
@@ -751,10 +751,9 @@ function TaskEditorForm({
             className="size-4 accent-[var(--primary)]"
             onChange={() =>
               onChange((currentForm) => {
-                const deadlineFields =
-                  !currentForm.startAt || !currentForm.dueAt
-                    ? createDefaultDeadlineFields()
-                    : {};
+                const deadlineFields = !currentForm.dueAt
+                  ? createDefaultDeadlineFields()
+                  : {};
 
                 return {
                   ...currentForm,
@@ -785,39 +784,21 @@ function TaskEditorForm({
       </div>
 
       {form.hasDeadline ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-2 text-sm font-medium">
-            开始时间
-            <input
-              className="h-11 rounded-md border border-[var(--border)] bg-[var(--field)] px-3 text-sm text-[var(--foreground)] outline-none focus:border-[var(--primary)]"
-              onChange={(event) =>
-                onChange((currentForm) => ({
-                  ...currentForm,
-                  startAt: event.target.value
-                }))
-              }
-              required
-              type="datetime-local"
-              value={form.startAt}
-            />
-          </label>
-
-          <label className="flex flex-col gap-2 text-sm font-medium">
-            DDL 时间
-            <input
-              className="h-11 rounded-md border border-[var(--border)] bg-[var(--field)] px-3 text-sm text-[var(--foreground)] outline-none focus:border-[var(--primary)]"
-              onChange={(event) =>
-                onChange((currentForm) => ({
-                  ...currentForm,
-                  dueAt: event.target.value
-                }))
-              }
-              required
-              type="datetime-local"
-              value={form.dueAt}
-            />
-          </label>
-        </div>
+        <label className="flex flex-col gap-2 text-sm font-medium">
+          DDL 时间
+          <input
+            className="h-11 rounded-md border border-[var(--border)] bg-[var(--field)] px-3 text-sm text-[var(--foreground)] outline-none focus:border-[var(--primary)]"
+            onChange={(event) =>
+              onChange((currentForm) => ({
+                ...currentForm,
+                dueAt: event.target.value
+              }))
+            }
+            required
+            type="datetime-local"
+            value={form.dueAt}
+          />
+        </label>
       ) : null}
 
       <button
@@ -1835,9 +1816,9 @@ function TaskCard({
       <div className="mt-5">
         {task.hasDeadline && task.startDate && task.dueDate ? (
           <div className="mb-3 grid gap-3 text-sm sm:grid-cols-3">
-            <InfoPill label="开始" value={formatDateTime(task.startDate)} />
-            <InfoPill label="剩余" value={task.remainingText} />
-            <InfoPill label="DDL" value={formatDateTime(task.dueDate)} />
+            <InfoPill label="添加时间" value={formatDateTime(task.startDate)} />
+            <InfoPill label="剩余时间" value={task.remainingText} />
+            <InfoPill label="截止时间" value={formatDateTime(task.dueDate)} />
           </div>
         ) : (
           <div className="text-sm">
@@ -2223,7 +2204,7 @@ function formatDurationValue(duration: DurationValue) {
   return `${duration.days} 天 ${duration.hours} 小时 ${duration.minutes} 分钟`;
 }
 
-function formToPayload(form: TaskFormState) {
+function formToPayload(form: TaskFormState, isCreatingTask: boolean) {
   if (!form.hasDeadline) {
     return {
       title: form.title,
@@ -2234,12 +2215,20 @@ function formToPayload(form: TaskFormState) {
     };
   }
 
-  return {
+  const payload = {
     title: form.title,
     description: form.description,
     hasDeadline: true,
-    startAt: new Date(form.startAt).toISOString(),
     dueAt: new Date(form.dueAt).toISOString()
+  };
+
+  if (isCreatingTask || !form.startAt) {
+    return payload;
+  }
+
+  return {
+    ...payload,
+    startAt: new Date(form.startAt).toISOString()
   };
 }
 
