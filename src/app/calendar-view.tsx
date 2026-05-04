@@ -547,7 +547,7 @@ function MonthGrid({
               tabIndex={isCenter ? 0 : -1}
             >
               <span
-                className="relative z-[1] inline-flex size-[22px] items-center justify-center rounded-full"
+                className="relative z-[1] inline-flex size-[15px] items-center justify-center rounded-full text-[11px] leading-none"
                 style={{
                   backgroundColor: isToday
                     ? "var(--primary)"
@@ -569,10 +569,10 @@ function MonthGrid({
 
 function TaskRingIndicator({ tasks }: { tasks: CalendarTask[] }) {
   const count = Math.min(tasks.length, 5);
-  const size = 40;
+  const size = 44;
   const cx = size / 2;
   const cy = size / 2;
-  const r = 14;
+  const r = 17;
   const circumference = 2 * Math.PI * r;
   const gapDeg = count === 1 ? 0 : 14;
   const arcDeg = (360 - gapDeg * count) / count;
