@@ -623,108 +623,113 @@ function RecentTimeline({
   }
 
   const isMajor = (h: number) => h % 12 === 0;
-  const maxStack = Math.max(1, ...groups.map(([, tasks]) => tasks.length));
+  const hasTwoRows = groups.length > 1;
+  const AXIS_TOP = 28;
+  const ROW1_TOP = AXIS_TOP + 20;
+  const ROW2_TOP = ROW1_TOP + 36;
+  const containerHeight = groups.length === 0 ? 60 : (hasTwoRows ? ROW2_TOP + 28 : ROW1_TOP + 28);
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2.5">
-        <div className="w-20 shrink-0" />
-        <div className="relative h-10 flex-1 min-w-0">
-          <div className="absolute inset-x-0 top-5 h-0.5 rounded-full bg-[var(--muted)]" />
+    <div className="flex items-start gap-2.5">
+      <div className="w-20 shrink-0" />
+      <div className="relative flex-1 min-w-0" style={{ height: `${containerHeight}px` }}>
+        <div className="absolute inset-x-0 h-0.5 rounded-full bg-[var(--muted)]" style={{ top: `${AXIS_TOP}px` }} />
 
-          <div
-            className="absolute top-3 -translate-x-1/2"
-            style={{ left: `${pct(now)}%` }}
-          >
-            <div className="flex flex-col items-center">
-              <div className="size-3 rounded-full border-[3px] border-[var(--primary)] bg-[var(--background)]" />
-              <span className="mt-0.5 text-[11px] font-bold text-[var(--primary)]">
-                现在
-              </span>
-            </div>
+        <div
+          className="absolute -translate-x-1/2"
+          style={{ left: `${pct(now)}%`, top: `${AXIS_TOP - 8}px` }}
+        >
+          <div className="flex flex-col items-center">
+            <div className="size-3 rounded-full border-[3px] border-[var(--primary)] bg-[var(--background)]" />
+            <span className="mt-0.5 text-[11px] font-bold text-[var(--primary)]">
+              现在
+            </span>
           </div>
+        </div>
 
-          {scaleMarks.map((h) => {
-            if (h === 0) return null;
-            const markMs = now + h * HOUR_MS;
-            const leftPct = pct(markMs);
-            if (leftPct < 0.5 || leftPct > 99.5) return null;
-            const major = isMajor(h);
+        {scaleMarks.map((h) => {
+          if (h === 0) return null;
+          const markMs = now + h * HOUR_MS;
+          const leftPct = pct(markMs);
+          if (leftPct < 0.5 || leftPct > 99.5) return null;
+          const major = isMajor(h);
+
+          return (
+            <div
+              className="absolute -translate-x-1/2"
+              key={h}
+              style={{ left: `${leftPct}%`, top: `${AXIS_TOP}px` }}
+            >
+              {major ? (
+                <>
+                  <div className="size-2 rounded-full bg-[var(--muted-foreground)]" />
+                  <span className="mt-0.5 block text-center text-[10px] leading-none text-[var(--muted-foreground)]">
+                    {h > 0 ? `+${h}h` : `${h}h`}
+                  </span>
+                </>
+              ) : (
+                <div className="size-1.5 rounded-full bg-[var(--border)]" />
+              )}
+            </div>
+          );
+        })}
+
+        {groups.length === 0 ? (
+          <p className="absolute inset-x-0 text-center text-sm text-[var(--muted-foreground)]" style={{ top: `${ROW1_TOP}px` }}>
+            ±{TIMELINE_HOURS_TOTAL}小时内没有待办任务
+          </p>
+        ) : (
+          groups.map(([ts, tasks], groupIndex) => {
+            const xPct = pct(ts);
+            const row = groupIndex % 2;
+            const eventTop = row === 0 ? ROW1_TOP : ROW2_TOP;
+            const lineEnd = eventTop;
 
             return (
               <div
-                className="absolute top-5 -translate-x-1/2"
-                key={h}
-                style={{ left: `${leftPct}%` }}
+                key={ts}
+                className="absolute"
+                style={{ left: `${xPct}%`, transform: "translateX(-50%)" }}
               >
-                {major ? (
-                  <>
-                    <div className="size-2 rounded-full bg-[var(--muted-foreground)]" />
-                    <span className="mt-0.5 block text-center text-[10px] leading-none text-[var(--muted-foreground)]">
-                      {h > 0 ? `+${h}h` : `${h}h`}
-                    </span>
-                  </>
-                ) : (
-                  <div className="size-1.5 rounded-full bg-[var(--border)]" />
-                )}
+                <div
+                  className="absolute left-1/2 -translate-x-1/2 w-px"
+                  style={{
+                    top: `${AXIS_TOP}px`,
+                    height: `${lineEnd - AXIS_TOP}px`,
+                    backgroundColor: "var(--border)"
+                  }}
+                />
+
+                <div
+                  className="absolute left-1/2 -translate-x-1/2"
+                  style={{ top: `${eventTop}px` }}
+                >
+                  {tasks.map((task, i) => {
+                    const statusColor = STATUS_COLORS[task.deadlineStatus];
+                    return (
+                      <div
+                        className="flex items-center gap-1.5"
+                        key={task.id}
+                        style={{ marginTop: i === 0 ? 0 : 3 }}
+                      >
+                        <div
+                          className="size-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: statusColor }}
+                        />
+                        <span
+                          className="whitespace-nowrap text-xs font-medium"
+                          style={{ color: statusColor }}
+                        >
+                          {task.title}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             );
-          })}
-        </div>
-      </div>
-
-      <div className="flex items-start gap-2.5">
-        <div className="w-20 shrink-0" />
-        <div className="relative flex-1 min-w-0">
-          {groups.length === 0 ? (
-            <p className="py-4 text-center text-sm text-[var(--muted-foreground)]">
-              ±{TIMELINE_HOURS_TOTAL}小时内没有待办任务
-            </p>
-          ) : (
-            <div className="relative" style={{ minHeight: `${maxStack * 30 + 10}px` }}>
-              {groups.map(([ts, tasks]) => {
-                const xPct = pct(ts);
-
-                return (
-                  <div
-                    key={ts}
-                    className="absolute top-0"
-                    style={{ left: `${xPct}%`, transform: "translateX(-50%)" }}
-                  >
-                    <div
-                      className="mx-auto w-px"
-                      style={{
-                        height: `${tasks.length * 26}px`,
-                        backgroundColor: "var(--border)"
-                      }}
-                    />
-                    {tasks.map((task, i) => {
-                      const statusColor = STATUS_COLORS[task.deadlineStatus];
-                      return (
-                        <div
-                          className="flex items-center gap-1.5"
-                          key={task.id}
-                          style={{ marginTop: i === 0 ? 0 : 4 }}
-                        >
-                          <div
-                            className="size-2.5 shrink-0 rounded-full"
-                            style={{ backgroundColor: statusColor }}
-                          />
-                          <span
-                            className="whitespace-nowrap text-xs font-medium"
-                            style={{ color: statusColor }}
-                          >
-                            {task.title}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+          })
+        )}
       </div>
     </div>
   );
