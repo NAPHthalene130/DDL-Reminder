@@ -625,13 +625,56 @@ function RecentTimeline({
   const isMajor = (h: number) => h % 12 === 0;
   const AXIS_TOP = 80;
   const EVENT_GAP = 40;
-  const containerTop = 0;
-  const containerHeight = groups.length === 0 ? 120 : AXIS_TOP * 2 + 20;
+
+  const URGENCY_RANK: Record<string, number> = {
+    overdue: 4,
+    urgent: 3,
+    approaching: 2,
+    normal: 1,
+    completed: 0,
+    archived: -1
+  };
+
+  function mostUrgent(tasks: CalendarTask[]) {
+    let best = tasks[0];
+    for (const t of tasks) {
+      if ((URGENCY_RANK[t.deadlineStatus] ?? 0) > (URGENCY_RANK[best.deadlineStatus] ?? 0)) {
+        best = t;
+      }
+    }
+    return best.deadlineStatus;
+  }
+
+  const rows: number[] = [AXIS_TOP - EVENT_GAP, AXIS_TOP - EVENT_GAP - 24, AXIS_TOP + EVENT_GAP - 4, AXIS_TOP + EVENT_GAP - 4 + 24];
+  const lastPctInRow: number[] = [-999, -999, -999, -999];
+  const ROW_IS_ABOVE = [true, true, false, false];
+  const MIN_GAP_PCT = 6;
+
+  const assignedRows: number[] = [];
+  for (let gi = 0; gi < groups.length; gi++) {
+    const xPctVal = pct(groups[gi][0]);
+    let bestRow = -1;
+    let bestGap = Infinity;
+    for (let r = 0; r < 4; r++) {
+      const gap = Math.abs(xPctVal - lastPctInRow[r]);
+      if (gap >= MIN_GAP_PCT && gap < bestGap) {
+        bestGap = gap;
+        bestRow = r;
+      }
+    }
+    if (bestRow === -1) {
+      bestRow = gi % 4;
+    }
+    assignedRows.push(bestRow);
+    lastPctInRow[bestRow] = xPctVal;
+  }
+
+  const containerHeight = groups.length === 0 ? 120 : AXIS_TOP * 2 + 56;
 
   return (
     <div className="flex items-start gap-2.5">
       <div className="w-20 shrink-0" />
-      <div className="relative flex-1 min-w-0" style={{ height: `${containerHeight}px`, marginTop: `${containerTop}px` }}>
+      <div className="relative flex-1 min-w-0" style={{ height: `${containerHeight}px` }}>
         <div className="absolute inset-x-0 h-0.5 rounded-full bg-[var(--muted)]" style={{ top: `${AXIS_TOP}px`, zIndex: 0 }} />
 
         <div
@@ -680,9 +723,11 @@ function RecentTimeline({
         ) : (
           groups.map(([ts, tasks], groupIndex) => {
             const xPct = pct(ts);
-            const isAbove = groupIndex % 2 === 0;
-            const lineLength = EVENT_GAP - 4;
-            const dotTop = isAbove ? AXIS_TOP - EVENT_GAP : AXIS_TOP + lineLength;
+            const row = assignedRows[groupIndex];
+            const isAbove = ROW_IS_ABOVE[row];
+            const dotTop = rows[row];
+            const lineLength = isAbove ? AXIS_TOP - dotTop : dotTop - AXIS_TOP;
+            const dotColor = STATUS_COLORS[mostUrgent(tasks)];
 
             return (
               <div
@@ -710,9 +755,7 @@ function RecentTimeline({
                     style={{
                       left: 0,
                       top: 3,
-                      backgroundColor: tasks.length === 1
-                        ? STATUS_COLORS[tasks[0].deadlineStatus]
-                        : "var(--muted-foreground)"
+                      backgroundColor: dotColor
                     }}
                   />
                   <div className="flex flex-col gap-0.5 pl-3.5">
