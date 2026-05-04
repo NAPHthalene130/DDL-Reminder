@@ -86,7 +86,7 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
     const inRange = tasks
       .filter((t) => {
         if (!t.hasDeadline || !t.dueDate) return false;
-        if (t.status !== "ACTIVE") return false;
+        if (t.status === "ARCHIVED") return false;
         const dueMs = t.dueDate.getTime();
         return dueMs >= start && dueMs <= end;
       })
@@ -623,21 +623,22 @@ function RecentTimeline({
   }
 
   const isMajor = (h: number) => h % 12 === 0;
+  const maxStack = Math.max(1, ...groups.map(([, tasks]) => tasks.length));
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2.5">
         <div className="w-20 shrink-0" />
-        <div className="relative h-8 flex-1 min-w-0">
-          <div className="absolute inset-x-0 top-4 h-0.5 rounded-full bg-[var(--muted)]" />
+        <div className="relative h-10 flex-1 min-w-0">
+          <div className="absolute inset-x-0 top-5 h-0.5 rounded-full bg-[var(--muted)]" />
 
           <div
-            className="absolute top-2 -translate-x-1/2"
+            className="absolute top-3 -translate-x-1/2"
             style={{ left: `${pct(now)}%` }}
           >
             <div className="flex flex-col items-center">
-              <div className="size-2.5 rounded-full border-[3px] border-[var(--primary)] bg-[var(--background)]" />
-              <span className="mt-1 text-[10px] font-bold text-[var(--primary)]">
+              <div className="size-3 rounded-full border-[3px] border-[var(--primary)] bg-[var(--background)]" />
+              <span className="mt-0.5 text-[11px] font-bold text-[var(--primary)]">
                 现在
               </span>
             </div>
@@ -652,19 +653,19 @@ function RecentTimeline({
 
             return (
               <div
-                className="absolute top-4 -translate-x-1/2"
+                className="absolute top-5 -translate-x-1/2"
                 key={h}
                 style={{ left: `${leftPct}%` }}
               >
                 {major ? (
                   <>
                     <div className="size-2 rounded-full bg-[var(--muted-foreground)]" />
-                    <span className="mt-0.5 block text-center text-[9px] leading-none text-[var(--muted-foreground)]">
+                    <span className="mt-0.5 block text-center text-[10px] leading-none text-[var(--muted-foreground)]">
                       {h > 0 ? `+${h}h` : `${h}h`}
                     </span>
                   </>
                 ) : (
-                  <div className="size-1 rounded-full bg-[var(--border)]" />
+                  <div className="size-1.5 rounded-full bg-[var(--border)]" />
                 )}
               </div>
             );
@@ -676,11 +677,11 @@ function RecentTimeline({
         <div className="w-20 shrink-0" />
         <div className="relative flex-1 min-w-0">
           {groups.length === 0 ? (
-            <p className="py-4 text-center text-xs text-[var(--muted-foreground)]">
+            <p className="py-4 text-center text-sm text-[var(--muted-foreground)]">
               ±{TIMELINE_HOURS_TOTAL}小时内没有待办任务
             </p>
           ) : (
-            <div className="relative" style={{ minHeight: `${Math.max(40, Math.max(...groups.map(([, tasks]) => tasks.length)) * 28)}px` }}>
+            <div className="relative" style={{ minHeight: `${maxStack * 30 + 10}px` }}>
               {groups.map(([ts, tasks]) => {
                 const xPct = pct(ts);
 
@@ -690,20 +691,27 @@ function RecentTimeline({
                     className="absolute top-0"
                     style={{ left: `${xPct}%`, transform: "translateX(-50%)" }}
                   >
+                    <div
+                      className="mx-auto w-px"
+                      style={{
+                        height: `${tasks.length * 26}px`,
+                        backgroundColor: "var(--border)"
+                      }}
+                    />
                     {tasks.map((task, i) => {
                       const statusColor = STATUS_COLORS[task.deadlineStatus];
                       return (
                         <div
-                          className="flex items-center gap-1"
+                          className="flex items-center gap-1.5"
                           key={task.id}
-                          style={{ marginTop: i === 0 ? 0 : 2 }}
+                          style={{ marginTop: i === 0 ? 0 : 4 }}
                         >
                           <div
-                            className="size-2 shrink-0 rounded-full"
+                            className="size-2.5 shrink-0 rounded-full"
                             style={{ backgroundColor: statusColor }}
                           />
                           <span
-                            className="whitespace-nowrap text-[10px] font-medium"
+                            className="whitespace-nowrap text-xs font-medium"
                             style={{ color: statusColor }}
                           >
                             {task.title}
