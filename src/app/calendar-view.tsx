@@ -5,9 +5,8 @@ import type { DeadlineStatus } from "@/lib/deadline";
 
 const WEEKDAY_LABELS = ["一", "二", "三", "四", "五", "六", "日"];
 const HOUR_MS = 60 * 60 * 1000;
-const TIMELINE_HOURS = 72;
-const TIMELINE_HALF = TIMELINE_HOURS / 2;
-const TIMELINE_STEP_HOURS = 3;
+const TIMELINE_HALF = 72;
+const TIMELINE_STEP_HOURS = 6;
 
 const STATUS_LABELS: Record<DeadlineStatus, string> = {
   normal: "正常",
@@ -29,12 +28,12 @@ type CalendarTask = {
 };
 
 const STATUS_COLORS: Record<DeadlineStatus, string> = {
-  normal: "#cfd9f4",
-  approaching: "#f5c84c",
-  urgent: "#f59e0b",
-  overdue: "#ff7a8a",
-  completed: "#4bae50",
-  archived: "#a5ad9b"
+  normal: "#4b9cf5",
+  approaching: "#e5a50a",
+  urgent: "#e53e3e",
+  overdue: "#e53e3e",
+  completed: "#38a169",
+  archived: "#8b8b8b"
 };
 
 type CalendarViewProps = {
@@ -93,7 +92,15 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
       })
       .sort((a, b) => a.dueDate!.getTime() - b.dueDate!.getTime());
 
-    return { now, start, end, tasks: inRange };
+    const grouped = new Map<number, CalendarTask[]>();
+    for (const t of inRange) {
+      const key = t.dueDate!.getTime();
+      const existing = grouped.get(key) ?? [];
+      existing.push(t);
+      grouped.set(key, existing);
+    }
+
+    return { now, start, end, groups: Array.from(grouped.entries()).sort(([a], [b]) => a - b) };
   }, [tasks, today]);
 
   const selectedDayTasks = useMemo(() => {
@@ -274,9 +281,9 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
       </section>
 
       <section>
-        <h2 className="mb-5 text-xl font-bold tracking-wide">近3天任务</h2>
+        <h2 className="mb-5 text-xl font-bold tracking-wide">近期任务</h2>
         <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-4">
-          <SeventyTwoHourTimeline timeline={timelineTasks} />
+          <RecentTimeline timeline={timelineTasks} />
         </div>
       </section>
     </section>
@@ -592,18 +599,19 @@ function TaskRingIndicator({ tasks }: { tasks: CalendarTask[] }) {
   );
 }
 
-function SeventyTwoHourTimeline({
+function RecentTimeline({
   timeline
 }: {
   timeline: {
     now: number;
     start: number;
     end: number;
-    tasks: CalendarTask[];
+    groups: Array<[number, CalendarTask[]]>;
   };
 }) {
-  const { now, start, end, tasks } = timeline;
+  const { now, start, end, groups } = timeline;
   const totalMs = end - start;
+  const TIMELINE_HOURS_TOTAL = TIMELINE_HALF * 2;
 
   function pct(ms: number) {
     return ((ms - start) / totalMs) * 100;
@@ -614,22 +622,22 @@ function SeventyTwoHourTimeline({
     scaleMarks.push(h);
   }
 
-  const isMajorLabel = (h: number) => h % 6 === 0;
+  const isMajor = (h: number) => h % 12 === 0;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <div className="flex items-center gap-2.5">
         <div className="w-20 shrink-0" />
-        <div className="relative h-10 flex-1 min-w-0">
-          <div className="absolute inset-x-0 top-3 h-1 rounded-full bg-[var(--muted)]" />
+        <div className="relative h-8 flex-1 min-w-0">
+          <div className="absolute inset-x-0 top-4 h-0.5 rounded-full bg-[var(--muted)]" />
 
           <div
-            className="absolute top-0 -translate-x-1/2"
+            className="absolute top-2 -translate-x-1/2"
             style={{ left: `${pct(now)}%` }}
           >
             <div className="flex flex-col items-center">
-              <div className="size-3 rounded-full border-2 border-[var(--primary)] bg-[var(--primary)]" />
-              <span className="mt-0.5 text-[10px] font-semibold text-[var(--primary)]">
+              <div className="size-2.5 rounded-full border-[3px] border-[var(--primary)] bg-[var(--background)]" />
+              <span className="mt-1 text-[10px] font-bold text-[var(--primary)]">
                 现在
               </span>
             </div>
@@ -639,19 +647,19 @@ function SeventyTwoHourTimeline({
             if (h === 0) return null;
             const markMs = now + h * HOUR_MS;
             const leftPct = pct(markMs);
-            if (leftPct < 1 || leftPct > 99) return null;
-            const major = isMajorLabel(h);
+            if (leftPct < 0.5 || leftPct > 99.5) return null;
+            const major = isMajor(h);
 
             return (
               <div
-                className="absolute top-3 -translate-x-1/2"
+                className="absolute top-4 -translate-x-1/2"
                 key={h}
                 style={{ left: `${leftPct}%` }}
               >
                 {major ? (
                   <>
-                    <div className="size-1.5 rounded-full bg-[var(--muted-foreground)]" />
-                    <span className="mt-0.5 block text-center text-[10px] leading-none text-[var(--muted-foreground)]">
+                    <div className="size-2 rounded-full bg-[var(--muted-foreground)]" />
+                    <span className="mt-0.5 block text-center text-[9px] leading-none text-[var(--muted-foreground)]">
                       {h > 0 ? `+${h}h` : `${h}h`}
                     </span>
                   </>
@@ -664,81 +672,52 @@ function SeventyTwoHourTimeline({
         </div>
       </div>
 
-      {tasks.length === 0 ? (
-        <p className="py-8 text-center text-sm text-[var(--muted-foreground)]">
-          未来72小时内没有待办任务
-        </p>
-      ) : (
-        <div className="flex flex-col gap-2.5">
-          {tasks.map((task) => {
-            const dueMs = task.dueDate!.getTime();
-            const startMs = task.startDate
-              ? Math.max(task.startDate.getTime(), start)
-              : start;
-            const barStartPct = pct(startMs);
-            const barEndPct = pct(dueMs);
-            const barWidth = barEndPct - barStartPct;
-            const isOverdue = dueMs < now;
-            const diffHours = Math.abs(
-              Math.round((dueMs - now) / HOUR_MS * 10) / 10
-            );
+      <div className="flex items-start gap-2.5">
+        <div className="w-20 shrink-0" />
+        <div className="relative flex-1 min-w-0">
+          {groups.length === 0 ? (
+            <p className="py-4 text-center text-xs text-[var(--muted-foreground)]">
+              ±{TIMELINE_HOURS_TOTAL}小时内没有待办任务
+            </p>
+          ) : (
+            <div className="relative" style={{ minHeight: `${Math.max(40, Math.max(...groups.map(([, tasks]) => tasks.length)) * 28)}px` }}>
+              {groups.map(([ts, tasks]) => {
+                const xPct = pct(ts);
 
-            return (
-              <div className="flex items-center gap-2.5" key={task.id}>
-                <span
-                  className={`w-20 shrink-0 text-right text-[10px] leading-tight ${
-                    isOverdue
-                      ? "text-[var(--danger)]"
-                      : "text-[var(--muted-foreground)]"
-                  }`}
-                >
-                  {isOverdue ? `逾期 ${diffHours}h` : `${diffHours}h 后`}
-                </span>
-                <div className="relative h-10 flex-1 min-w-0">
-                  <div className="absolute inset-y-0 left-0 rounded bg-[var(--muted)]" style={{ right: 0 }} />
-
+                return (
                   <div
-                    className="absolute inset-y-0 rounded"
-                    style={{
-                      left: `${barStartPct}%`,
-                      width: `${barWidth}%`,
-                      backgroundColor: STATUS_COLORS[task.deadlineStatus] + "30",
-                      border: `1px solid ${STATUS_COLORS[task.deadlineStatus]}40`
-                    }}
-                  />
-
-                  <span
-                    className="absolute top-0 -translate-x-1/2 -translate-y-full pb-1 text-[10px] leading-none text-[var(--muted-foreground)]"
-                    style={{ left: `${barStartPct}%` }}
+                    key={ts}
+                    className="absolute top-0"
+                    style={{ left: `${xPct}%`, transform: "translateX(-50%)" }}
                   >
-                    {formatTimeShort(new Date(startMs))}
-                  </span>
-
-                  <span
-                    className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-medium"
-                    style={{
-                      left: `${barStartPct + (barEndPct - barStartPct) / 2}%`,
-                      color: STATUS_COLORS[task.deadlineStatus]
-                    }}
-                  >
-                    {task.title}
-                  </span>
-
-                  <span
-                    className="absolute top-0 -translate-x-1/2 -translate-y-full pb-1 text-[10px] leading-none font-semibold"
-                    style={{
-                      left: `${barEndPct}%`,
-                      color: STATUS_COLORS[task.deadlineStatus]
-                    }}
-                  >
-                    {formatTimeShort(task.dueDate!)}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
+                    {tasks.map((task, i) => {
+                      const statusColor = STATUS_COLORS[task.deadlineStatus];
+                      return (
+                        <div
+                          className="flex items-center gap-1"
+                          key={task.id}
+                          style={{ marginTop: i === 0 ? 0 : 2 }}
+                        >
+                          <div
+                            className="size-2 shrink-0 rounded-full"
+                            style={{ backgroundColor: statusColor }}
+                          />
+                          <span
+                            className="whitespace-nowrap text-[10px] font-medium"
+                            style={{ color: statusColor }}
+                          >
+                            {task.title}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
