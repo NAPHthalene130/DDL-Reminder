@@ -546,7 +546,14 @@ function MonthGrid({
               role="gridcell"
               tabIndex={isCenter ? 0 : -1}
             >
-              <span className="relative z-[1] inline-flex size-[22px] items-center justify-center rounded-full" style={{ backgroundColor: "var(--panel)" }}>
+              <span
+                className="relative z-[1] inline-flex size-[22px] items-center justify-center rounded-full"
+                style={{
+                  backgroundColor: isToday
+                    ? "var(--primary)"
+                    : "var(--panel)"
+                }}
+              >
                 {day}
               </span>
               {dayTasks.length > 0 ? (
@@ -565,13 +572,13 @@ function TaskRingIndicator({ tasks }: { tasks: CalendarTask[] }) {
   const size = 40;
   const cx = size / 2;
   const cy = size / 2;
-  const r = 15;
+  const r = 14;
   const circumference = 2 * Math.PI * r;
-  const gapDeg = count === 1 ? 0 : 6;
+  const gapDeg = count === 1 ? 0 : 14;
   const arcDeg = (360 - gapDeg * count) / count;
   const arcLen = (arcDeg / 360) * circumference;
   const stepDeg = 360 / count;
-  const strokeW = 3;
+  const strokeW = 4;
 
   return (
     <svg
