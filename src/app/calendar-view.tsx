@@ -651,22 +651,31 @@ function RecentTimeline({
   const MIN_GAP_PCT = 6;
 
   const assignedRows: number[] = [];
+  let lastSide: "above" | "below" | null = null;
   for (let gi = 0; gi < groups.length; gi++) {
     const xPctVal = pct(groups[gi][0]);
+
+    const preferAbove = lastSide !== "above";
+    const firstSide = preferAbove ? [0, 1] : [2, 3];
+    const secondSide = preferAbove ? [2, 3] : [0, 1];
+
     let bestRow = -1;
-    let bestGap = Infinity;
-    for (let r = 0; r < 4; r++) {
-      const gap = Math.abs(xPctVal - lastPctInRow[r]);
-      if (gap >= MIN_GAP_PCT && gap < bestGap) {
-        bestGap = gap;
-        bestRow = r;
+    for (const side of [firstSide, secondSide]) {
+      for (const r of side) {
+        const gap = Math.abs(xPctVal - lastPctInRow[r]);
+        if (gap >= MIN_GAP_PCT) {
+          bestRow = r;
+          break;
+        }
       }
+      if (bestRow !== -1) break;
     }
     if (bestRow === -1) {
       bestRow = gi % 4;
     }
     assignedRows.push(bestRow);
     lastPctInRow[bestRow] = xPctVal;
+    lastSide = ROW_IS_ABOVE[bestRow] ? "above" : "below";
   }
 
   const containerHeight = groups.length === 0 ? 120 : AXIS_TOP * 2 + 56;
