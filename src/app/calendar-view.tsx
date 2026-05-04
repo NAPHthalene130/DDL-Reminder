@@ -185,7 +185,7 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
 
         <div
           className="relative h-0 overflow-visible"
-          style={{ paddingBottom: "36%" }}
+          style={{ paddingBottom: "29%" }}
         >
           <div
             className="absolute inset-0"
@@ -514,7 +514,7 @@ function MonthGrid({
 
           return (
             <div
-              className={`relative flex flex-col items-center justify-center gap-0.5 rounded py-0.5 text-sm transition overflow-visible ${
+              className={`relative flex items-center justify-center rounded py-1 text-sm transition overflow-visible ${
                 isToday
                   ? "bg-[var(--primary)] font-bold text-[var(--primary-foreground)]"
                   : isSelected
@@ -557,16 +557,16 @@ function MonthGrid({
 
 function TaskRingIndicator({ tasks }: { tasks: CalendarTask[] }) {
   const count = Math.min(tasks.length, 5);
-  const size = 48;
+  const size = 52;
   const cx = size / 2;
   const cy = size / 2;
-  const r = 18;
+  const r = 22;
   const circumference = 2 * Math.PI * r;
   const gapDeg = count === 1 ? 0 : 30;
   const arcDeg = (360 - gapDeg * count) / count;
   const arcLen = (arcDeg / 360) * circumference;
   const stepDeg = 360 / count;
-  const strokeW = count === 1 ? 5 : 6;
+  const strokeW = count === 1 ? 6 : 8;
 
   return (
     <svg
