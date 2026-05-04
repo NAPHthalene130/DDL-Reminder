@@ -2223,7 +2223,7 @@ function formToPayload(form: TaskFormState, isCreatingTask: boolean) {
   };
 
   if (isCreatingTask || !form.startAt) {
-    return payload;
+    return { ...payload, startAt: null };
   }
 
   return {
