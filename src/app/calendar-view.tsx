@@ -526,7 +526,7 @@ function MonthGrid({
 
           return (
             <div
-              className={`relative flex flex-col items-center gap-0.5 rounded py-1 text-xs transition ${
+              className={`relative flex flex-col items-center justify-center gap-0.5 rounded py-0.5 text-xs transition overflow-visible ${
                 isToday
                   ? "bg-[var(--primary)] font-bold text-[var(--primary-foreground)]"
                   : isSelected
@@ -546,7 +546,9 @@ function MonthGrid({
               role="gridcell"
               tabIndex={isCenter ? 0 : -1}
             >
-              <span className="relative z-[1]">{day}</span>
+              <span className="relative z-[1] inline-flex size-[22px] items-center justify-center rounded-full" style={{ backgroundColor: "var(--panel)" }}>
+                {day}
+              </span>
               {dayTasks.length > 0 ? (
                 <TaskRingIndicator tasks={dayTasks} />
               ) : null}
@@ -560,16 +562,16 @@ function MonthGrid({
 
 function TaskRingIndicator({ tasks }: { tasks: CalendarTask[] }) {
   const count = Math.min(tasks.length, 5);
-  const size = 36;
+  const size = 40;
   const cx = size / 2;
   const cy = size / 2;
-  const r = 14;
+  const r = 15;
   const circumference = 2 * Math.PI * r;
-  const gapDeg = count === 1 ? 0 : 5;
+  const gapDeg = count === 1 ? 0 : 6;
   const arcDeg = (360 - gapDeg * count) / count;
   const arcLen = (arcDeg / 360) * circumference;
   const stepDeg = 360 / count;
-  const strokeW = 2.5;
+  const strokeW = 3;
 
   return (
     <svg
@@ -587,7 +589,7 @@ function TaskRingIndicator({ tasks }: { tasks: CalendarTask[] }) {
           stroke={STATUS_COLORS[task.deadlineStatus]}
           strokeDasharray={`${arcLen} ${circumference}`}
           strokeDashoffset="0"
-          strokeLinecap={count === 1 ? undefined : "round"}
+          strokeLinecap={count === 1 ? "butt" : "round"}
           strokeWidth={strokeW}
           transform={`rotate(${i * stepDeg - 90} ${cx} ${cy})`}
         />
