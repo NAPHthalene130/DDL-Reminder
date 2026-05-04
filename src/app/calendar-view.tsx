@@ -686,6 +686,17 @@ function RecentTimeline({
       <div className="relative flex-1 min-w-0" style={{ height: `${containerHeight}px` }}>
         <div className="absolute inset-x-0 h-0.5 rounded-full bg-[var(--muted)]" style={{ top: `${AXIS_TOP}px`, zIndex: 0 }} />
 
+        <div className="absolute z-10" style={{ left: "0%", top: `${AXIS_TOP}px`, transform: "translateX(-50%)" }}>
+          <span className="block text-center text-[10px] leading-none text-[var(--muted-foreground)]">
+            -72h
+          </span>
+        </div>
+        <div className="absolute z-10" style={{ left: "100%", top: `${AXIS_TOP}px`, transform: "translateX(-50%)" }}>
+          <span className="block text-center text-[10px] leading-none text-[var(--muted-foreground)]">
+            +72h
+          </span>
+        </div>
+
         <div
           className="absolute -translate-x-1/2 z-10"
           style={{ left: `${pct(now)}%`, top: `${AXIS_TOP - 8}px` }}
