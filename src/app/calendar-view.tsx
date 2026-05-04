@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DeadlineStatus } from "@/lib/deadline";
 
 const WEEKDAY_LABELS = ["一", "二", "三", "四", "五", "六", "日"];
@@ -277,82 +277,11 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
         </div>
 
         {selectedDay ? (
-          <div className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--panel)] p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-bold">
-                {formatDateChinese(selectedDay)} 的 DDL 事件
-                <span className="ml-1.5 text-xs font-normal text-[var(--muted-foreground)]">
-                  ({selectedDayTasks.length} 个)
-                </span>
-              </h3>
-              <button
-                aria-label="关闭"
-                className="inline-flex size-6 items-center justify-center rounded text-[var(--muted-foreground)] transition hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-                onClick={() => setSelectedDay(null)}
-                type="button"
-              >
-                <svg aria-hidden="true" className="size-3.5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
-                  <path d="M18 6 6 18" />
-                  <path d="m6 6 12 12" />
-                </svg>
-              </button>
-            </div>
-            {selectedDayTasks.length === 0 ? (
-              <p className="py-2 text-center text-xs text-[var(--muted-foreground)]">
-                该日没有截止的任务
-              </p>
-            ) : (
-              <div className="relative">
-                <div
-                  className="absolute bottom-0 left-[11px] top-3 w-px"
-                  style={{ backgroundColor: "var(--border)" }}
-                />
-                <div className="flex flex-col gap-3">
-                  {selectedDayTasks.map((task) => {
-                    const hour = task.dueDate
-                      ? String(task.dueDate.getHours()).padStart(2, "0")
-                      : "--";
-                    const minute = task.dueDate
-                      ? String(task.dueDate.getMinutes()).padStart(2, "0")
-                      : "--";
-
-                    return (
-                      <div className="flex gap-3" key={task.id}>
-                        <span className="relative z-[1] mt-1 block size-[22px] shrink-0 rounded-full border-2" style={{ borderColor: STATUS_COLORS[task.deadlineStatus], backgroundColor: "var(--panel)" }}>
-                          <span className="absolute inset-0 m-auto block size-2 rounded-full" style={{ backgroundColor: STATUS_COLORS[task.deadlineStatus] }} />
-                        </span>
-
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-baseline gap-2">
-                            <span className="shrink-0 text-xs font-mono font-semibold" style={{ color: STATUS_COLORS[task.deadlineStatus] }}>
-                              {hour}:{minute}
-                            </span>
-                            <span className="truncate text-xs font-medium">
-                              {task.title}
-                            </span>
-                          </div>
-                          <div className="mt-0.5 flex items-center gap-2">
-                            <span className="shrink-0 rounded px-1.5 py-px text-[10px] font-medium" style={{ backgroundColor: STATUS_COLORS[task.deadlineStatus] + "20", color: STATUS_COLORS[task.deadlineStatus] }}>
-                              {STATUS_LABELS[task.deadlineStatus]}
-                            </span>
-                            {task.startDate ? (
-                              <span className="truncate text-[10px] text-[var(--muted-foreground)]">
-                                {formatTimeShort(task.startDate)} → {formatTimeShort(task.dueDate!)}
-                              </span>
-                            ) : (
-                              <span className="truncate text-[10px] text-[var(--muted-foreground)]">
-                                截止 {formatDateTime(task.dueDate!)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
+          <DayEventsModal
+            onClose={() => setSelectedDay(null)}
+            selectedDay={selectedDay}
+            tasks={selectedDayTasks}
+          />
         ) : null}
       </section>
 
@@ -363,6 +292,113 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
         </div>
       </section>
     </section>
+  );
+}
+
+function DayEventsModal({
+  onClose,
+  selectedDay,
+  tasks
+}: {
+  onClose: () => void;
+  selectedDay: string;
+  tasks: CalendarTask[];
+}) {
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <button
+        aria-label="关闭"
+        className="absolute inset-0 bg-black/40"
+        onClick={onClose}
+        type="button"
+      />
+
+      <div className="relative z-[1] mx-4 w-full max-w-xs rounded-lg border border-[var(--border)] bg-[var(--panel)] p-4 shadow-2xl">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-bold">
+            {formatDateChinese(selectedDay)}
+            <span className="ml-1.5 text-xs font-normal text-[var(--muted-foreground)]">
+              ({tasks.length} 个)
+            </span>
+          </h3>
+          <button
+            aria-label="关闭"
+            className="inline-flex size-6 items-center justify-center rounded text-[var(--muted-foreground)] transition hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+            onClick={onClose}
+            type="button"
+          >
+            <svg aria-hidden="true" className="size-3.5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {tasks.length === 0 ? (
+          <p className="py-4 text-center text-xs text-[var(--muted-foreground)]">
+            该日没有截止的任务
+          </p>
+        ) : (
+          <div className="relative">
+            <div
+              className="absolute bottom-0 left-[11px] top-2 w-px"
+              style={{ backgroundColor: "var(--border)" }}
+            />
+            <div className="flex flex-col gap-3">
+              {tasks.map((task) => {
+                const hour = task.dueDate
+                  ? String(task.dueDate.getHours()).padStart(2, "0")
+                  : "--";
+                const minute = task.dueDate
+                  ? String(task.dueDate.getMinutes()).padStart(2, "0")
+                  : "--";
+
+                return (
+                  <div className="flex gap-3" key={task.id}>
+                    <span className="relative z-[1] mt-1 block size-[22px] shrink-0 rounded-full border-2" style={{ borderColor: STATUS_COLORS[task.deadlineStatus], backgroundColor: "var(--panel)" }}>
+                      <span className="absolute inset-0 m-auto block size-2 rounded-full" style={{ backgroundColor: STATUS_COLORS[task.deadlineStatus] }} />
+                    </span>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="shrink-0 font-mono text-xs font-semibold" style={{ color: STATUS_COLORS[task.deadlineStatus] }}>
+                          {hour}:{minute}
+                        </span>
+                        <span className="truncate text-xs font-medium">
+                          {task.title}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 flex items-center gap-2">
+                        <span className="shrink-0 rounded px-1.5 py-px text-[10px] font-medium" style={{ backgroundColor: STATUS_COLORS[task.deadlineStatus] + "20", color: STATUS_COLORS[task.deadlineStatus] }}>
+                          {STATUS_LABELS[task.deadlineStatus]}
+                        </span>
+                        {task.startDate ? (
+                          <span className="truncate text-[10px] text-[var(--muted-foreground)]">
+                            {formatTimeShort(task.startDate)} → {formatTimeShort(task.dueDate!)}
+                          </span>
+                        ) : (
+                          <span className="truncate text-[10px] text-[var(--muted-foreground)]">
+                            截止 {formatDateTime(task.dueDate!)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -490,7 +526,7 @@ function MonthGrid({
 
           return (
             <div
-              className={`flex flex-col items-center gap-0.5 rounded py-1 text-xs transition ${
+              className={`relative flex flex-col items-center gap-0.5 rounded py-1 text-xs transition ${
                 isToday
                   ? "bg-[var(--primary)] font-bold text-[var(--primary-foreground)]"
                   : isSelected
@@ -510,25 +546,53 @@ function MonthGrid({
               role="gridcell"
               tabIndex={isCenter ? 0 : -1}
             >
-              <span>{day}</span>
+              <span className="relative z-[1]">{day}</span>
               {dayTasks.length > 0 ? (
-                <div className="flex gap-0.5">
-                  {dayTasks.slice(0, 3).map((task, taskIndex) => (
-                    <span
-                      className="block size-1.5 rounded-full"
-                      key={taskIndex}
-                      style={{
-                        backgroundColor: STATUS_COLORS[task.deadlineStatus]
-                      }}
-                    />
-                  ))}
-                </div>
+                <TaskRingIndicator tasks={dayTasks} />
               ) : null}
             </div>
           );
         })}
       </div>
     </div>
+  );
+}
+
+function TaskRingIndicator({ tasks }: { tasks: CalendarTask[] }) {
+  const count = Math.min(tasks.length, 5);
+  const size = 36;
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = 14;
+  const circumference = 2 * Math.PI * r;
+  const gapDeg = count === 1 ? 0 : 5;
+  const arcDeg = (360 - gapDeg * count) / count;
+  const arcLen = (arcDeg / 360) * circumference;
+  const stepDeg = 360 / count;
+  const strokeW = 2.5;
+
+  return (
+    <svg
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 size-full"
+      viewBox={`0 0 ${size} ${size}`}
+    >
+      {tasks.slice(0, 5).map((task, i) => (
+        <circle
+          cx={cx}
+          cy={cy}
+          fill="none"
+          key={i}
+          r={r}
+          stroke={STATUS_COLORS[task.deadlineStatus]}
+          strokeDasharray={`${arcLen} ${circumference}`}
+          strokeDashoffset="0"
+          strokeLinecap={count === 1 ? undefined : "round"}
+          strokeWidth={strokeW}
+          transform={`rotate(${i * stepDeg - 90} ${cx} ${cy})`}
+        />
+      ))}
+    </svg>
   );
 }
 
