@@ -152,9 +152,6 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
         <div className="mb-5 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold tracking-wide">任务总览</h2>
-            <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">
-              按截止时间排列
-            </p>
           </div>
           <div className="relative" ref={pickerRef}>
             <button
@@ -196,30 +193,51 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
           >
             {months.map((month) => {
               const pos = positionStyles[month.position];
+              const isCenter = month.position === "center";
+              const sharedClassName = `absolute top-0 h-full rounded-lg border p-3 text-left transition-[left,transform,opacity,border-color,background-color] duration-500 ease-in-out ${
+                isCenter ? "" : "cursor-pointer"
+              }`;
+              const sharedStyle: React.CSSProperties = {
+                left: month.cardLeft,
+                width: month.cardWidth,
+                transform: pos.transform,
+                transformOrigin: pos.transformOrigin,
+                zIndex: pos.zIndex,
+                opacity: pos.opacity,
+                borderColor: isCenter ? "var(--primary)" : "var(--border)",
+                backgroundColor: "var(--panel)"
+              };
+
+              if (isCenter) {
+                return (
+                  <div
+                    key={formatYearMonth(month.date)}
+                    className={sharedClassName}
+                    style={sharedStyle}
+                  >
+                    <MonthGrid
+                      isCenter
+                      monthDate={month.date}
+                      onDayClick={handleDayClick}
+                      selectedDay={selectedDay}
+                      tasksByDay={tasksByDay}
+                      today={today}
+                    />
+                  </div>
+                );
+              }
+
               return (
                 <button
                   key={formatYearMonth(month.date)}
                   aria-label={`切换到 ${formatYearMonth(month.date)}`}
-                  className="absolute top-0 h-full rounded-lg border p-3 text-left transition-[left,transform,opacity,border-color,background-color] duration-500 ease-in-out"
-                  disabled={month.position === "center"}
+                  className={sharedClassName}
                   onClick={() => handleMonthClick(month.position)}
-                  style={{
-                    left: month.cardLeft,
-                    width: month.cardWidth,
-                    transform: pos.transform,
-                    transformOrigin: pos.transformOrigin,
-                    zIndex: pos.zIndex,
-                    opacity: pos.opacity,
-                    borderColor:
-                      month.position === "center"
-                        ? "var(--primary)"
-                        : "var(--border)",
-                    backgroundColor: "var(--panel)"
-                  }}
+                  style={sharedStyle}
                   type="button"
                 >
                   <MonthGrid
-                    isCenter={month.position === "center"}
+                    isCenter={false}
                     monthDate={month.date}
                     onDayClick={handleDayClick}
                     selectedDay={selectedDay}
