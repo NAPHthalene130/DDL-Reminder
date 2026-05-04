@@ -98,7 +98,10 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
 
   const selectedDayTasks = useMemo(() => {
     if (!selectedDay) return [];
-    return tasksByDay.get(selectedDay) ?? [];
+    const dayTasks = tasksByDay.get(selectedDay) ?? [];
+    return [...dayTasks].sort(
+      (a, b) => (a.dueDate?.getTime() ?? 0) - (b.dueDate?.getTime() ?? 0)
+    );
   }, [selectedDay, tasksByDay]);
 
   function handleMonthClick(monthKey: string) {
@@ -259,7 +262,7 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
           <div className="mt-4 rounded-lg border border-[var(--border)] bg-[var(--panel)] p-4">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-bold">
-                {formatDateChinese(selectedDay)} 的任务
+                {formatDateChinese(selectedDay)} 的 DDL 事件
                 <span className="ml-1.5 text-xs font-normal text-[var(--muted-foreground)]">
                   ({selectedDayTasks.length} 个)
                 </span>
@@ -281,39 +284,54 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
                 该日没有截止的任务
               </p>
             ) : (
-              <div className="flex flex-col gap-2">
-                {selectedDayTasks.map((task) => (
-                  <div
-                    className="flex items-center gap-3 rounded-md border border-[var(--border)] bg-[var(--field)] px-3 py-2.5"
-                    key={task.id}
-                  >
-                    <span
-                      className="block size-2 shrink-0 rounded-full"
-                      style={{
-                        backgroundColor: STATUS_COLORS[task.deadlineStatus]
-                      }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-medium">
-                        {task.title}
-                      </p>
-                      {task.dueDate ? (
-                        <p className="mt-0.5 truncate text-[10px] text-[var(--muted-foreground)]">
-                          截止 {formatDateTime(task.dueDate)}
-                        </p>
-                      ) : null}
-                    </div>
-                    <span
-                      className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
-                      style={{
-                        backgroundColor: STATUS_COLORS[task.deadlineStatus] + "20",
-                        color: STATUS_COLORS[task.deadlineStatus]
-                      }}
-                    >
-                      {STATUS_LABELS[task.deadlineStatus]}
-                    </span>
-                  </div>
-                ))}
+              <div className="relative">
+                <div
+                  className="absolute bottom-0 left-[11px] top-3 w-px"
+                  style={{ backgroundColor: "var(--border)" }}
+                />
+                <div className="flex flex-col gap-3">
+                  {selectedDayTasks.map((task) => {
+                    const hour = task.dueDate
+                      ? String(task.dueDate.getHours()).padStart(2, "0")
+                      : "--";
+                    const minute = task.dueDate
+                      ? String(task.dueDate.getMinutes()).padStart(2, "0")
+                      : "--";
+
+                    return (
+                      <div className="flex gap-3" key={task.id}>
+                        <span className="relative z-[1] mt-1 block size-[22px] shrink-0 rounded-full border-2" style={{ borderColor: STATUS_COLORS[task.deadlineStatus], backgroundColor: "var(--panel)" }}>
+                          <span className="absolute inset-0 m-auto block size-2 rounded-full" style={{ backgroundColor: STATUS_COLORS[task.deadlineStatus] }} />
+                        </span>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-baseline gap-2">
+                            <span className="shrink-0 text-xs font-mono font-semibold" style={{ color: STATUS_COLORS[task.deadlineStatus] }}>
+                              {hour}:{minute}
+                            </span>
+                            <span className="truncate text-xs font-medium">
+                              {task.title}
+                            </span>
+                          </div>
+                          <div className="mt-0.5 flex items-center gap-2">
+                            <span className="shrink-0 rounded px-1.5 py-px text-[10px] font-medium" style={{ backgroundColor: STATUS_COLORS[task.deadlineStatus] + "20", color: STATUS_COLORS[task.deadlineStatus] }}>
+                              {STATUS_LABELS[task.deadlineStatus]}
+                            </span>
+                            {task.startDate ? (
+                              <span className="truncate text-[10px] text-[var(--muted-foreground)]">
+                                {formatTimeShort(task.startDate)} → {formatTimeShort(task.dueDate!)}
+                              </span>
+                            ) : (
+                              <span className="truncate text-[10px] text-[var(--muted-foreground)]">
+                                截止 {formatDateTime(task.dueDate!)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
