@@ -702,30 +702,30 @@ function RecentTimeline({
                 />
 
                 <div
-                  className="absolute -translate-x-1/2"
+                  className="absolute"
                   style={{ left: 0, top: `${dotTop}px`, zIndex: 10 }}
                 >
-                  {tasks.map((task, i) => {
-                    const statusColor = STATUS_COLORS[task.deadlineStatus];
-                    return (
-                      <div
-                        className={`flex items-center gap-1.5 ${isAbove ? "flex-col-reverse" : "flex-col"}`}
+                  <div
+                    className="absolute size-2.5 rounded-full -translate-x-1/2"
+                    style={{
+                      left: 0,
+                      top: 3,
+                      backgroundColor: tasks.length === 1
+                        ? STATUS_COLORS[tasks[0].deadlineStatus]
+                        : "var(--muted-foreground)"
+                    }}
+                  />
+                  <div className="flex flex-col gap-0.5 pl-3.5">
+                    {tasks.map((task) => (
+                      <span
+                        className="whitespace-nowrap text-xs font-medium"
                         key={task.id}
-                        style={{ marginTop: i === 0 ? 0 : 6 }}
+                        style={{ color: STATUS_COLORS[task.deadlineStatus] }}
                       >
-                        <div
-                          className="size-2.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: statusColor }}
-                        />
-                        <span
-                          className="whitespace-nowrap text-xs font-medium"
-                          style={{ color: statusColor }}
-                        >
-                          {task.title}
-                        </span>
-                      </div>
-                    );
-                  })}
+                        {task.title}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             );
