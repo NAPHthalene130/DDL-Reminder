@@ -125,7 +125,7 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
     setPickerOpen(false);
   }
 
-  const positionStyles: Record<string, { transform: string; transformOrigin: string; zIndex: number; opacity: number }> = {
+  const rotationStyles: Record<string, { transform: string; transformOrigin: string; zIndex: number; opacity: number }> = {
     prev: {
       transform: "rotateY(18deg) scale(0.92)",
       transformOrigin: "right center",
@@ -185,18 +185,15 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
 
         <div
           className="relative h-0 overflow-visible"
-          style={{ paddingBottom: "28%" }}
+          style={{ paddingBottom: "36%" }}
         >
           <div
             className="absolute inset-0"
             style={{ perspective: "1000px" }}
           >
             {months.map((month) => {
-              const pos = positionStyles[month.position];
+              const pos = rotationStyles[month.position];
               const isCenter = month.position === "center";
-              const sharedClassName = `absolute top-0 h-full rounded-lg border p-3 text-left transition-[left,transform,opacity,border-color,background-color] duration-500 ease-in-out ${
-                isCenter ? "" : "cursor-pointer"
-              }`;
               const sharedStyle: React.CSSProperties = {
                 left: month.cardLeft,
                 width: month.cardWidth,
@@ -208,43 +205,34 @@ export default function CalendarView({ tasks }: CalendarViewProps) {
                 backgroundColor: "var(--panel)"
               };
 
-              if (isCenter) {
-                return (
-                  <div
-                    key={formatYearMonth(month.date)}
-                    className={sharedClassName}
-                    style={sharedStyle}
-                  >
-                    <MonthGrid
-                      isCenter
-                      monthDate={month.date}
-                      onDayClick={handleDayClick}
-                      selectedDay={selectedDay}
-                      tasksByDay={tasksByDay}
-                      today={today}
-                    />
-                  </div>
-                );
-              }
-
               return (
-                <button
+                <div
                   key={formatYearMonth(month.date)}
-                  aria-label={`切换到 ${formatYearMonth(month.date)}`}
-                  className={sharedClassName}
-                  onClick={() => handleMonthClick(month.position)}
+                  className={`absolute top-0 h-full rounded-lg border p-3 text-left transition-[left,transform,opacity,border-color,background-color] duration-500 ease-in-out ${
+                    isCenter ? "" : "cursor-pointer"
+                  }`}
+                  onClick={() => {
+                    if (!isCenter) handleMonthClick(month.position);
+                  }}
+                  onKeyDown={(e) => {
+                    if (!isCenter && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleMonthClick(month.position);
+                    }
+                  }}
+                  role={isCenter ? undefined : "button"}
                   style={sharedStyle}
-                  type="button"
+                  tabIndex={isCenter ? -1 : 0}
                 >
                   <MonthGrid
-                    isCenter={false}
+                    isCenter={isCenter}
                     monthDate={month.date}
                     onDayClick={handleDayClick}
                     selectedDay={selectedDay}
                     tasksByDay={tasksByDay}
                     today={today}
                   />
-                </button>
+                </div>
               );
             })}
           </div>
@@ -496,19 +484,19 @@ function MonthGrid({
   return (
     <div>
       <p
-        className={`mb-2 text-sm font-bold ${
+        className={`mb-2 text-base font-bold ${
           isCenter ? "" : "pointer-events-none"
         }`}
       >
         {formatYearMonth(monthDate)}
       </p>
       <div
-        className="grid grid-cols-7 gap-px text-center text-xs"
+        className="grid grid-cols-7 gap-px text-center text-sm"
         role="grid"
       >
         {WEEKDAY_LABELS.map((label) => (
           <div
-            className="py-1 font-semibold text-[var(--muted-foreground)]"
+            className="py-1.5 font-semibold text-[var(--muted-foreground)]"
             key={label}
           >
             {label}
@@ -526,7 +514,7 @@ function MonthGrid({
 
           return (
             <div
-              className={`relative flex flex-col items-center justify-center gap-0.5 rounded py-0.5 text-xs transition overflow-visible ${
+              className={`relative flex flex-col items-center justify-center gap-0.5 rounded py-0.5 text-sm transition overflow-visible ${
                 isToday
                   ? "bg-[var(--primary)] font-bold text-[var(--primary-foreground)]"
                   : isSelected
@@ -547,7 +535,7 @@ function MonthGrid({
               tabIndex={isCenter ? 0 : -1}
             >
               <span
-                className="relative z-[1] inline-flex size-[15px] items-center justify-center rounded-full text-[11px] leading-none"
+                className="relative z-[1] inline-flex size-[20px] items-center justify-center rounded-full text-sm leading-none font-semibold"
                 style={{
                   backgroundColor: isToday
                     ? "var(--primary)"
@@ -569,16 +557,16 @@ function MonthGrid({
 
 function TaskRingIndicator({ tasks }: { tasks: CalendarTask[] }) {
   const count = Math.min(tasks.length, 5);
-  const size = 44;
+  const size = 48;
   const cx = size / 2;
   const cy = size / 2;
-  const r = 17;
+  const r = 18;
   const circumference = 2 * Math.PI * r;
-  const gapDeg = count === 1 ? 0 : 14;
+  const gapDeg = count === 1 ? 0 : 30;
   const arcDeg = (360 - gapDeg * count) / count;
   const arcLen = (arcDeg / 360) * circumference;
   const stepDeg = 360 / count;
-  const strokeW = 4;
+  const strokeW = count === 1 ? 5 : 6;
 
   return (
     <svg
@@ -596,7 +584,6 @@ function TaskRingIndicator({ tasks }: { tasks: CalendarTask[] }) {
           stroke={STATUS_COLORS[task.deadlineStatus]}
           strokeDasharray={`${arcLen} ${circumference}`}
           strokeDashoffset="0"
-          strokeLinecap={count === 1 ? "butt" : "round"}
           strokeWidth={strokeW}
           transform={`rotate(${i * stepDeg - 90} ${cx} ${cy})`}
         />
