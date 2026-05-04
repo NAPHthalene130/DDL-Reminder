@@ -453,18 +453,26 @@ function MonthGrid({
           const isSelected = cellKey === selectedDay;
 
           return (
-            <button
+            <div
               className={`flex flex-col items-center gap-0.5 rounded py-1 text-xs transition ${
                 isToday
                   ? "bg-[var(--primary)] font-bold text-[var(--primary-foreground)]"
                   : isSelected
                     ? "bg-[var(--muted)] font-semibold text-[var(--foreground)]"
                     : "hover:bg-[var(--muted)]"
-              } ${isCenter ? "" : "pointer-events-none"}`}
+              } ${isCenter ? "cursor-pointer" : "pointer-events-none"}`}
               key={day}
-              onClick={() => onDayClick(cellKey)}
+              onClick={() => {
+                if (isCenter) onDayClick(cellKey);
+              }}
+              onKeyDown={(e) => {
+                if (isCenter && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault();
+                  onDayClick(cellKey);
+                }
+              }}
               role="gridcell"
-              type="button"
+              tabIndex={isCenter ? 0 : -1}
             >
               <span>{day}</span>
               {dayTasks.length > 0 ? (
@@ -480,7 +488,7 @@ function MonthGrid({
                   ))}
                 </div>
               ) : null}
-            </button>
+            </div>
           );
         })}
       </div>
